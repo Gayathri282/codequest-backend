@@ -1,0 +1,41 @@
+{
+  "name": "codequest-backend",
+  "version": "1.0.0",
+  "description": "CodeQuest API — Node.js + Express + PostgreSQL",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node src/index.js",
+    "migrate": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "migrate:reset": "npx prisma migrate reset --force",
+    "seed": "node prisma/seed.js",
+    "studio": "npx prisma studio",
+    "generate": "npx prisma generate",
+    "setup": "npm install && npx prisma generate && npx prisma migrate dev && node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0",
+    "@prisma/extension-accelerate": "^3.0.1",
+    "@supabase/supabase-js": "^2.39.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "razorpay": "^2.9.2",
+    "resend": "^2.1.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "prisma": "^5.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
