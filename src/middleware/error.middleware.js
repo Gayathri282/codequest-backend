@@ -1,7 +1,8 @@
 // backend/src/middleware/error.middleware.js
 
 function errorHandler(err, req, res, next) {
-  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message);
+  const msg = err.message || err?.error?.description || err?.error?.code || 'Unknown error';
+  console.error(`[ERROR] ${req.method} ${req.path}:`, msg);
 
   // Prisma known errors
   if (err.code === 'P2002') {
@@ -18,7 +19,7 @@ function errorHandler(err, req, res, next) {
 
   const status = err.status || err.statusCode || 500;
   res.status(status).json({
-    error: err.message || 'Internal server error',
+    error: msg,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 }

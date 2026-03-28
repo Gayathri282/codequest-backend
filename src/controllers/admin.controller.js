@@ -72,16 +72,34 @@ async function getAnalytics(req, res, next) {
   }
 }
 
-// PATCH /api/admin/settings  — save platform settings (stored as JSON in a settings table)
-// For now we just acknowledge — in production use a Settings model in Prisma
-async function saveSettings(req, res, next) {
+// GET /api/admin/settings
+async function getSettings(req, res, next) {
   try {
-    // In a real deployment, persist to a Settings table or environment vars
-    console.log('[ADMIN] Settings update received:', Object.keys(req.body));
-    res.json({ message: 'Settings saved', updatedKeys: Object.keys(req.body) });
+    const rows = await prisma.setting.findMany();
+    const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    res.json(settings);
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getAnalytics, saveSettings };
+// PATCH /api/admin/settings  — upsert key-value pairs into the settings table
+async function saveSettings(req, res, next) {
+  try {
+    const entries = Object.entries(req.body);
+    await Promise.all(
+      entries.map(([key, value]) =>
+        prisma.setting.upsert({
+          where:  { key },
+          update: { value: String(value) },
+          create: { key,  value: String(value) },
+        })
+      )
+    );
+    res.json({ message: 'Settings saved', updatedKeys: entries.map(([k]) => k) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getAnalytics, getSettings, saveSettings };

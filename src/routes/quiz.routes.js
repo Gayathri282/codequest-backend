@@ -7,6 +7,12 @@ const prisma = new PrismaClient();
 // GET /api/quiz/:sessionId  — fetch questions (locked if already completed)
 router.get('/:sessionId', requireAuth, async (req, res, next) => {
   try {
+    // Plan gate — check session order
+    const session = await prisma.session.findUnique({ where: { id: req.params.sessionId }, select: { order: true } });
+    if (session && session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
+    }
+
     // Lock quiz after first attempt — check progress record
     const existing = await prisma.progress.findUnique({
       where: { userId_sessionId: { userId: req.user.id, sessionId: req.params.sessionId } }
@@ -29,6 +35,10 @@ router.get('/:sessionId', requireAuth, async (req, res, next) => {
 router.post('/:sessionId/submit', requireAuth, async (req, res, next) => {
   try {
     const { answers } = req.body; // { questionId: "A"|"B"|"C"|"D" }
+    const sessionMeta = await prisma.session.findUnique({ where: { id: req.params.sessionId }, select: { order: true } });
+    if (sessionMeta && sessionMeta.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
+    }
     const questions = await prisma.quizQuestion.findMany({
       where: { sessionId: req.params.sessionId }
     });

@@ -13,6 +13,11 @@ async function getSession(req, res, next) {
     });
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
+    // FREE plan can only access the first 4 sessions
+    if (session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
+    }
+
     res.json(session);
   } catch (err) {
     next(err);

@@ -91,7 +91,9 @@ router.post('/badges', requireAuth, requireAdmin, async (req, res, next) => {
 });
 
 // GET  /api/admin/analytics
+// GET  /api/admin/settings
 // PATCH /api/admin/settings
 const adminCtrl = require('../controllers/admin.controller');
 router.get('/analytics',  requireAuth, requireAdmin, adminCtrl.getAnalytics);
+router.get('/settings',   requireAuth, requireAdmin, adminCtrl.getSettings);
 router.patch('/settings', requireAuth, requireAdmin, adminCtrl.saveSettings);

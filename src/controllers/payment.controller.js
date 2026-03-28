@@ -9,25 +9,39 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-const PLAN_PRICES = {
-  BASIC:   29900,  // ₹299 in paise
-  PREMIUM: 79900,  // ₹799 in paise
+const DEFAULT_PRICES = {
+  PREMIUM: 149900,  // ₹1,499 in paise
 };
+
+async function getPlanPrice(plan) {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: `PRICE_${plan}` } });
+    if (row) return parseInt(row.value, 10);
+  } catch (_) {}
+  return DEFAULT_PRICES[plan] ?? null;
+}
 
 // POST /api/payments/create-order
 // Frontend calls this → get order id → open Razorpay modal
 async function createOrder(req, res, next) {
   try {
-    const { plan } = req.body;  // "BASIC" or "PREMIUM"
-    const amount = PLAN_PRICES[plan];
+    const { plan } = req.body;  // "PREMIUM"
+    const amount = await getPlanPrice(plan);
     if (!amount) return res.status(400).json({ error: 'Invalid plan' });
 
-    const order = await razorpay.orders.create({
-      amount,
-      currency: 'INR',
-      receipt: `cq_${req.user.id}_${Date.now()}`,
-      notes: { userId: req.user.id, plan }
-    });
+    let order;
+    try {
+      order = await razorpay.orders.create({
+        amount,
+        currency: 'INR',
+        receipt: `cq_${req.user.id.replace(/-/g,'').slice(0,20)}_${Date.now().toString().slice(-8)}`,
+        notes: { userId: req.user.id, plan }
+      });
+    } catch (rzErr) {
+      // Razorpay SDK throws { statusCode, error: { description } } — not a standard Error
+      const msg = rzErr?.error?.description || rzErr?.error?.code || 'Payment gateway error';
+      return res.status(rzErr?.statusCode || 502).json({ error: msg });
+    }
 
     // Save pending payment
     await prisma.payment.create({
@@ -133,4 +147,17 @@ async function getHistory(req, res, next) {
   }
 }
 
-module.exports = { createOrder, verifyPayment, webhook, getHistory };
+// GET /api/payments/pricing  — public endpoint to fetch current plan prices
+async function getPricing(req, res, next) {
+  try {
+    const premiumPaise = await getPlanPrice('PREMIUM');
+    res.json({
+      PREMIUM: premiumPaise,
+      PREMIUM_RUPEES: Math.round(premiumPaise / 100),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createOrder, verifyPayment, webhook, getHistory, getPricing };

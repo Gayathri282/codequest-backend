@@ -5,6 +5,7 @@ const { requireAuth, requireAdmin } = require('../middleware/auth.middleware');
 
 // Raw body already set in index.js for this path
 router.post('/webhook',        c.webhook);
+router.get('/pricing',         c.getPricing);   // public — no auth required
 router.post('/create-order',   requireAuth, c.createOrder);
 router.post('/verify',         requireAuth, c.verifyPayment);
 router.get('/history',         requireAuth, requireAdmin, c.getHistory);

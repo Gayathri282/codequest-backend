@@ -40,13 +40,17 @@ model User {
   // Student profile
   username      String?   @unique
   displayName   String?
-  avatarEmoji   String?   @default("🏃")
+  avatarEmoji   String?   @default("🐸")
   age           Int?
   xp            Int       @default(0)
   coins         Int       @default(0)
   level         Int       @default(1)
   streakDays    Int       @default(0)
   lastActiveAt  DateTime?
+
+  // Password reset
+  resetToken        String?
+  resetTokenExpiry  DateTime?
 
   // Parent link
   parentId      String?
@@ -66,20 +70,21 @@ model User {
 // ─────────────────────────────────────────────────────
 
 model Course {
-  id          String    @id @default(uuid())
-  title       String
-  emoji       String
-  description String?
-  color       String    @default("#00C8E8")
-  subject     String                          // "HTML/CSS", "Python", etc.
-  ageGroup    String    @default("5-13")
-  order       Int       @default(0)           // display order
-  isPublished Boolean   @default(false)
-  isLocked    Boolean   @default(true)
-  unlocksAfter String?                        // courseId that must be completed first
-  totalXp     Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String    @id @default(uuid())
+  title            String
+  emoji            String
+  description      String?
+  color            String    @default("#00C8E8")
+  subject          String                          // "HTML/CSS", "Python", etc.
+  ageGroup         String    @default("5-13")
+  order            Int       @default(0)           // display order
+  isPublished      Boolean   @default(false)
+  isLocked         Boolean   @default(true)
+  unlocksAfter     String?                        // courseId that must be completed first
+  totalXp          Int       @default(0)
+  freeSessionCount Int       @default(4)          // sessions visible without PREMIUM
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   sessions    Session[]
   progress    Progress[]
@@ -240,4 +245,16 @@ model Payment {
   updatedAt       DateTime      @updatedAt
 
   @@map("payments")
+}
+
+// ─────────────────────────────────────────────────────
+//  SETTINGS  (key-value store for admin-configurable values)
+// ─────────────────────────────────────────────────────
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }

@@ -1,8 +1,9 @@
 // backend/src/controllers/auth.controller.js
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
+const crypto     = require('crypto');
 const { PrismaClient } = require('@prisma/client');
-const { sendWelcomeEmail } = require('../services/email.service');
+const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
 
 const prisma = new PrismaClient();
 
@@ -51,10 +52,10 @@ async function login(req, res, next) {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+    if (!user) return res.status(401).json({ error: 'No account found with that email.' });
 
     const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+    if (!valid) return res.status(401).json({ error: 'Incorrect password.' });
 
     // Update last active
     await prisma.user.update({
@@ -93,4 +94,56 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { register, login, me };
+// POST /api/auth/forgot-password
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) return res.status(404).json({ error: 'No account found with that email.' });
+
+    const token   = crypto.randomBytes(32).toString('hex');
+    const expiry  = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data:  { resetToken: token, resetTokenExpiry: expiry },
+    });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    await sendPasswordResetEmail({ to: email, name: user.displayName || user.username, resetUrl });
+
+    res.json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/reset-password
+async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken:       token,
+        resetTokenExpiry: { gt: new Date() },
+      },
+    });
+
+    if (!user) return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data:  { passwordHash, resetToken: null, resetTokenExpiry: null },
+    });
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, me, forgotPassword, resetPassword };

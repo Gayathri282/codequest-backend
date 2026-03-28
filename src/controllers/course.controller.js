@@ -5,14 +5,15 @@ const prisma = new PrismaClient();
 // GET /api/courses  — all published courses with student progress
 async function getAllCourses(req, res, next) {
   try {
+    const isAdmin = req.user?.role === 'ADMIN';
     const courses = await prisma.course.findMany({
-      where: { isLocked: false },
+      where: isAdmin ? undefined : { isLocked: false },
       orderBy: { order: 'asc' },
       include: {
         sessions: {
-          where: { isPublished: true },
+          ...(isAdmin ? {} : { where: { isPublished: true } }),
           orderBy: { order: 'asc' },
-          select: { id: true, title: true, type: true, order: true, xpReward: true, coinsReward: true, durationMins: true }
+          select: { id: true, title: true, type: true, order: true, xpReward: true, coinsReward: true, durationMins: true, isPublished: true }
         }
       }
     });
@@ -48,11 +49,12 @@ async function getAllCourses(req, res, next) {
 // GET /api/courses/:id
 async function getCourse(req, res, next) {
   try {
+    const isAdmin = req.user?.role === 'ADMIN';
     const course = await prisma.course.findUnique({
       where: { id: req.params.id },
       include: {
         sessions: {
-          where: { isPublished: true },
+          ...(isAdmin ? {} : { where: { isPublished: true } }),
           orderBy: { order: 'asc' }
         }
       }

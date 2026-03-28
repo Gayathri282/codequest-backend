@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendWelcomeEmail({ to, name }) {
   try {
     await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'noreply@codequest.in',
+      from: 'onboarding@resend.dev',
       to,
       subject: '🚀 Welcome to CodeQuest — Start Your Coding Adventure!',
       html: `
@@ -54,4 +54,27 @@ async function sendProgressReport({ to, studentName, report }) {
   }
 }
 
-module.exports = { sendWelcomeEmail, sendProgressReport };
+async function sendPasswordResetEmail({ to, name, resetUrl }) {
+  const result = await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to,
+    subject: '🔑 Reset your CodeQuest password',
+    html: `
+      <div style="font-family:'Nunito',sans-serif;max-width:600px;margin:0 auto;background:#FFF8F5;padding:32px;border-radius:20px;border:2px solid #FFD4BA;">
+        <h2 style="color:#FF6B35;font-size:26px;margin:0 0 12px;">Hey ${name}, forgot your password?</h2>
+        <p style="font-size:16px;color:#1A0A00;">No worries! Click the button below to set a new one. This link expires in <strong>1 hour</strong>.</p>
+        <a href="${resetUrl}"
+           style="display:inline-block;background:#FF6B35;color:#fff;padding:14px 32px;border-radius:14px;text-decoration:none;font-size:18px;font-weight:bold;margin:20px 0;">
+          🔑 Reset My Password
+        </a>
+        <p style="font-size:13px;color:#8A7060;margin-top:20px;">If you didn't request this, just ignore this email — your password won't change.</p>
+      </div>
+    `,
+  });
+  if (result.error) {
+    console.error('[EMAIL] Resend error:', result.error);
+    throw new Error(result.error.message);
+  }
+}
+
+module.exports = { sendWelcomeEmail, sendProgressReport, sendPasswordResetEmail };
