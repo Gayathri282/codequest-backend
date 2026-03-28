@@ -2,8 +2,11 @@
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
 const crypto     = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const { PrismaClient } = require('@prisma/client');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const prisma = new PrismaClient();
 
@@ -39,6 +42,7 @@ async function register(req, res, next) {
     const token = signToken(user.id);
     res.status(201).json({
       token,
+      isNew: true,
       user: { id: user.id, email: user.email, username: user.username, role: user.role, plan: user.plan }
     });
   } catch (err) {
@@ -146,4 +150,60 @@ async function resetPassword(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, forgotPassword, resetPassword };
+// POST /api/auth/google
+async function googleAuth(req, res, next) {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ error: 'Google credential required' });
+
+    // Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken:  credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // Find or create user
+    let isNew = false;
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      isNew = true;
+      // Auto-generate a username from email
+      const base = email.split('@')[0].replace(/[^a-z0-9]/gi, '').slice(0, 16).toLowerCase();
+      let username = base;
+      let suffix = 1;
+      while (await prisma.user.findUnique({ where: { username } })) {
+        username = `${base}${suffix++}`;
+      }
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash: await bcrypt.hash(googleId + process.env.JWT_SECRET, 10),
+          username,
+          displayName: name || username,
+          role: 'STUDENT',
+          plan: 'FREE',
+        }
+      });
+      await sendWelcomeEmail({ to: email, name: name || username }).catch(() => {});
+    }
+
+    await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
+
+    const token = signToken(user.id);
+    res.json({
+      token,
+      isNew,
+      user: { id: user.id, email: user.email, username: user.username,
+              role: user.role, plan: user.plan, xp: user.xp,
+              coins: user.coins, level: user.level, streakDays: user.streakDays }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, me, forgotPassword, resetPassword, googleAuth };
