@@ -4,7 +4,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const path           = require('path');
-const supabase       = require('../config/supabase');
+const getSupabase    = require('../config/supabase');
 const prisma         = require('../config/db');
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'codequest-assets';
@@ -18,7 +18,7 @@ async function uploadThumbnail(req, res, next) {
     const ext      = path.extname(req.file.originalname).toLowerCase();
     const fileName = `thumbnails/${uuidv4()}${ext}`;
 
-    const { error } = await supabase.storage
+    const { error } = await getSupabase().storage
       .from(BUCKET)
       .upload(fileName, req.file.buffer, {
         contentType: req.file.mimetype,
@@ -27,7 +27,7 @@ async function uploadThumbnail(req, res, next) {
 
     if (error) throw new Error(error.message);
 
-    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+    const { data: { publicUrl } } = getSupabase().storage.from(BUCKET).getPublicUrl(fileName);
     res.json({ url: publicUrl, path: fileName });
   } catch (err) {
     next(err);
@@ -42,7 +42,7 @@ async function uploadDocument(req, res, next) {
     const ext      = path.extname(req.file.originalname).toLowerCase();
     const fileName = `documents/${uuidv4()}${ext}`;
 
-    const { error } = await supabase.storage
+    const { error } = await getSupabase().storage
       .from(BUCKET)
       .upload(fileName, req.file.buffer, {
         contentType: req.file.mimetype,
@@ -51,7 +51,7 @@ async function uploadDocument(req, res, next) {
 
     if (error) throw new Error(error.message);
 
-    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+    const { data: { publicUrl } } = getSupabase().storage.from(BUCKET).getPublicUrl(fileName);
     res.json({ url: publicUrl, path: fileName });
   } catch (err) {
     next(err);
@@ -64,7 +64,7 @@ async function deleteFile(req, res, next) {
     const { filePath } = req.body;
     if (!filePath) return res.status(400).json({ error: 'filePath required' });
 
-    const { error } = await supabase.storage.from(BUCKET).remove([filePath]);
+    const { error } = await getSupabase().storage.from(BUCKET).remove([filePath]);
     if (error) throw new Error(error.message);
 
     res.json({ message: 'File deleted' });
