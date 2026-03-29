@@ -1,0 +1,780 @@
+============================================================
+  BUILD YOUR FIRST WEBSITE — AI AVATAR TEACHING SCRIPT
+  Course: HTML & CSS | Age Group: 8–14 | 13 Sessions
+  Format: Spoken script for AI avatar presenter
+  Note: All coding happens inside the CodeQuest built-in IDE
+============================================================
+
+Each session is marked with:
+  [SHOW] = display code or image on screen
+  [PAUSE] = brief pause for effect
+  [DEMO] = point to the built-in IDE on screen
+  (...)  = natural speech pause
+
+
+============================================================
+SESSION 1 — The Internet + Your First HTML File
+Type: VIDEO | Duration: 25 min | XP: 80
+============================================================
+
+Hey there, future web developer! Welcome to CodeQuest — I'm so excited you're here.
+
+[PAUSE]
+
+Today we're going to answer the biggest question of all...
+
+How does the internet actually work?
+
+[PAUSE]
+
+Okay so imagine you want to visit YouTube. You type "youtube.com" into your browser and... boom, the page loads. But what just happened?
+
+Here's the secret. The internet is basically millions of computers talking to each other. When you type a website address, your computer sends a message — like a little letter — to another computer called a server. That server holds the website's files. It sends them back to you, and your browser reads those files and shows you the page.
+
+[PAUSE]
+
+And those files? They're mostly written in something called HTML.
+
+HTML is the language of the web. Every single website you've ever visited — Google, Instagram, Roblox, YouTube — all of them started as HTML.
+
+[PAUSE]
+
+And today... you're going to write your very first HTML.
+
+The best part? You don't need to install anything. CodeQuest has a built-in code editor right on this page — everything you type instantly appears as a real webpage in the preview panel.
+
+Let's go!
+
+[DEMO: point to the IDE on screen]
+
+See that code editor on your screen? That's where you'll type. And on the right side — that's the live preview. Every time you click Run, it shows exactly what your code looks like in a real browser.
+
+Now type this in the editor:
+
+[SHOW code on screen:]
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Website</title>
+  </head>
+  <body>
+
+    <h1>Hi, I'm Alex!</h1>
+
+  </body>
+</html>
+
+Let me explain each part.
+
+DOCTYPE — this line tells the browser "hey, this is an HTML file." Always put it first.
+
+html — this tag wraps everything. Think of it as the container for your whole page.
+
+head — this section holds information ABOUT your page that visitors don't see — like the title in the browser tab.
+
+title — whatever you write here shows up in the browser tab!
+
+body — everything you want to SHOW on your page goes inside here.
+
+h1 — this is a big bold heading. The "h" stands for heading, and "1" means it's the biggest size.
+
+[PAUSE]
+
+Now click Run and watch the preview panel on the right.
+
+[DEMO: point to the Run button and preview panel]
+
+You just made your first web page. Seriously. That's real HTML running in real time!
+
+[PAUSE]
+
+Your mission: replace "Alex" with YOUR name, and add one more h1 with something you love — maybe your favourite game, food, or sport. Hit Run and see it appear!
+
+See you in Session 2!
+
+
+============================================================
+SESSION 2 — HTML Tags: Headings, Links & Images
+Type: VIDEO | Duration: 30 min | XP: 80
+============================================================
+
+Welcome back! You wrote your first HTML last time — that's huge.
+
+Today we're adding real content to your page right here in the CodeQuest IDE. Headings, links you can click, and actual images. By the end of this session your page is going to look like a proper website.
+
+[PAUSE]
+
+Let's start with headings. HTML has SIX sizes of headings. Type these into the editor and hit Run after each one:
+
+[SHOW code:]
+<h1>I am the biggest</h1>
+<h2>A bit smaller</h2>
+<h3>Even smaller</h3>
+<h4>Getting small now</h4>
+<h5>Pretty small</h5>
+<h6>Tiny!</h6>
+
+h1 is your main title — use it once per page.
+h2 is for section titles.
+h3 is for sub-sections.
+
+Think of it like a newspaper — there's one big headline, then smaller sub-headlines underneath.
+
+[PAUSE]
+
+Next — paragraphs. Use the p tag for regular text.
+
+[SHOW code:]
+<p>I am 10 years old and I love coding and Minecraft.</p>
+
+Easy, right? Every sentence or chunk of text goes inside a p tag.
+
+[PAUSE]
+
+Now, links! Type this and click Run.
+
+[SHOW code:]
+<a href="https://www.youtube.com">Click here for YouTube</a>
+
+The a tag creates a clickable link. The "href" is where it goes when clicked. You can link to any website!
+
+[PAUSE]
+
+And images — try this:
+
+[SHOW code:]
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/480px-Cat_November_2010-1a.jpg" alt="A cat">
+
+src is the source — the URL of your image.
+alt is the description — it shows if the image fails to load.
+
+In the CodeQuest IDE you can use any image URL from the internet directly in your src!
+
+[DEMO: show image appearing in preview panel]
+
+Your mission: use the editor to add all 6 heading sizes, a paragraph about yourself, a link to your favourite website, and an image. Hit Run after each addition and watch the preview update!
+
+
+============================================================
+SESSION 3 — Lists, Tables & Organising Your Page
+Type: CODE | Duration: 30 min | XP: 120
+============================================================
+
+Alright, coder! Today we're organising our page with lists and tables.
+
+You'll see starter code already loaded in the editor below. Your job is to fill in the blanks!
+
+[DEMO: point to the starter code in the IDE]
+
+[PAUSE]
+
+First, bullet lists — called unordered lists because the order doesn't matter:
+
+[SHOW code:]
+<ul>
+  <li>Minecraft</li>
+  <li>Subway Surfers</li>
+  <li>Ludo</li>
+  <li>Among Us</li>
+</ul>
+
+ul means unordered list. li means list item. Hit Run and see the bullets appear in the preview!
+
+[PAUSE]
+
+Numbered lists — called ordered lists. Use these when order matters, like a ranking:
+
+[SHOW code:]
+<ol>
+  <li>Minecraft — best game ever</li>
+  <li>Pizza — best food ever</li>
+  <li>Coding — best skill ever</li>
+</ol>
+
+The browser automatically adds 1, 2, 3... no need to type numbers yourself!
+
+[PAUSE]
+
+Tables — perfect for information in rows and columns:
+
+[SHOW code:]
+<table>
+  <tr>
+    <th>Game</th>
+    <th>Why I Like It</th>
+  </tr>
+  <tr>
+    <td>Minecraft</td>
+    <td>You can build anything</td>
+  </tr>
+</table>
+
+tr — table row. th — header cell (bold). td — data cell.
+
+[PAUSE]
+
+And div — think of it as a box that groups things together. Wrap each section in a div to organise your page. Later, CSS will let you style each section differently.
+
+[DEMO: point to Run and Solution buttons]
+
+Your challenge: fill in the starter code in the editor. When you're done, click Run to see your result. Stuck? Hit the Solution button to see how it should look!
+
+
+============================================================
+SESSION 4 — Quiz: HTML Fundamentals
+Type: QUIZ | Duration: 10 min | XP: 100
+============================================================
+
+Time to test what you've learned!
+
+Five questions on HTML — tags, headings, links, images, and lists.
+
+Read each question carefully and pick your answer. You've got this — let's go!
+
+[QUIZ BEGINS]
+
+
+============================================================
+SESSION 5 — CSS: Colors, Fonts & Backgrounds
+Type: VIDEO | Duration: 30 min | XP: 80
+============================================================
+
+Welcome to Week 2! Until now, your page has been plain black and white. That changes TODAY.
+
+We're learning CSS — Cascading Style Sheets. If HTML is the skeleton of your page, CSS is the skin, clothes, and style. It's what makes things look good.
+
+[PAUSE]
+
+In the CodeQuest IDE, you can write CSS right inside a style tag in your HTML — no separate file needed! Like this:
+
+[SHOW code:]
+<head>
+  <title>My Website</title>
+  <style>
+
+    /* Your CSS goes here */
+
+  </style>
+</head>
+
+Everything between the style tags is CSS. The browser applies it automatically when you click Run.
+
+[PAUSE]
+
+Here's the basic CSS rule format:
+
+[SHOW code:]
+selector {
+  property: value;
+}
+
+The selector is the HTML tag you want to style.
+The property is WHAT you want to change — like color or font-size.
+The value is HOW you want to change it.
+
+[PAUSE]
+
+Let's change the heading color. Type this inside your style tags:
+
+[SHOW code:]
+h1 {
+  color: #FF6B35;
+}
+
+That hex code — the hashtag and 6 characters — is a specific color. This one is orange. Hit Run and watch your heading turn orange in the preview!
+
+[PAUSE]
+
+Background color:
+
+[SHOW code:]
+body {
+  background-color: #1A237E;
+  color: white;
+}
+
+Styling the body tag changes the whole page background!
+
+[PAUSE]
+
+Google Fonts — you don't have to use boring default fonts. Add this link in your head:
+
+[SHOW code:]
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+
+Then in your style tag:
+
+[SHOW code:]
+body {
+  font-family: 'Nunito', sans-serif;
+}
+
+Hit Run — instantly your whole page uses that font!
+
+[DEMO: Before and after — plain page vs styled page in the preview panel]
+
+Your mission: add a style tag, change heading colors with hex codes, pick a Google Font, and set a background color. Click Run after each change and watch the preview!
+
+
+============================================================
+SESSION 6 — The Box Model: Spacing, Borders & Sizing
+Type: VIDEO | Duration: 30 min | XP: 80
+============================================================
+
+Hey! Today we're learning one of the most important concepts in CSS — the Box Model.
+
+Every single element on your page is a box. And every box has four layers:
+
+[SHOW diagram: Content → Padding → Border → Margin]
+
+Content — the actual text or image inside.
+Padding — space INSIDE the box, between the content and the border.
+Border — the visible edge of the box.
+Margin — space OUTSIDE the box, pushing other elements away.
+
+[PAUSE]
+
+Try adding padding to a paragraph. In your style tag:
+
+[SHOW code:]
+p {
+  padding: 20px;
+}
+
+Hit Run — see how the text now has breathing room inside!
+
+[PAUSE]
+
+Margin:
+
+[SHOW code:]
+h1 {
+  margin-bottom: 30px;
+}
+
+This pushes 30 pixels of empty space below every h1. Your headings no longer feel cramped!
+
+[PAUSE]
+
+Borders and border-radius — try this on an image:
+
+[SHOW code:]
+img {
+  border: 3px solid #FF6B35;
+  border-radius: 12px;
+  width: 300px;
+}
+
+border-radius rounds the corners. At 50% it becomes a perfect circle!
+
+[PAUSE]
+
+Always add this at the top of your CSS — it makes sizing predictable:
+
+[SHOW code:]
+* {
+  box-sizing: border-box;
+}
+
+The star means "apply to everything." This one line saves you a lot of frustration!
+
+[DEMO: Show before and after adding padding, margins, and borders in the preview]
+
+Your mission: add padding to paragraphs, margin to headings, a border and border-radius to an image, and set a width. Watch it all update live in the preview!
+
+
+============================================================
+SESSION 7 — Cards, Buttons & Your Page Header
+Type: CODE | Duration: 35 min | XP: 120
+============================================================
+
+Now we're building things that look really professional — a card, a button, and a header section. These are on every real website!
+
+The starter code is already in the editor. Look at the empty CSS classes — your job is to fill them in.
+
+[DEMO: point to the starter code and the empty CSS rules in the IDE]
+
+[PAUSE]
+
+A card is a styled div — white background, rounded corners, a shadow:
+
+[SHOW code:]
+.card {
+  background-color: white;
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+  padding: 20px;
+  width: 280px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+Notice the dot before "card" — that's a class selector. It only styles elements that have class="card" in the HTML. Hit Run after adding this and watch a card appear in the preview!
+
+[PAUSE]
+
+Button with hover effect:
+
+[SHOW code:]
+.btn {
+  background-color: #FF6B35;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #e55a25;
+}
+
+:hover applies only when the mouse is over the button. cursor: pointer makes the mouse turn into a hand!
+
+[PAUSE]
+
+Header section:
+
+[SHOW code:]
+.header {
+  background-color: #1A237E;
+  color: white;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+Your challenge: fill in the empty CSS in the starter code, then click Run to see your card, button, and header come alive in the preview. Click Solution to compare!
+
+
+============================================================
+SESSION 8 — Quiz: CSS Styling
+Type: QUIZ | Duration: 10 min | XP: 100
+============================================================
+
+Quiz time! This one covers all your CSS knowledge — colors, fonts, the box model, classes, and buttons.
+
+Five questions. Think carefully. You've got this!
+
+[QUIZ BEGINS]
+
+
+============================================================
+SESSION 9 — Flexbox: Alignment Made Easy
+Type: CODE | Duration: 35 min | XP: 120
+============================================================
+
+Hands down the most useful CSS skill I'm going to teach you — Flexbox.
+
+Before Flexbox, making things sit side by side was really complicated. Now? It's two lines of CSS.
+
+[PAUSE]
+
+Look at the starter code in the editor. Three cards are stacked vertically. Your mission: make them sit side by side!
+
+[DEMO: point to the three stacked cards in the preview panel]
+
+All you need is this CSS for the parent container:
+
+[SHOW code:]
+.card-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+display: flex — turns on Flexbox. Children automatically line up side by side.
+justify-content: center — centres everything horizontally.
+gap: 20px — adds space between the cards.
+
+Hit Run... and watch all three cards appear side by side in the preview!
+
+[DEMO: point to the cards now in a row in the preview]
+
+[PAUSE]
+
+Other useful Flexbox tricks:
+
+align-items: center — aligns items vertically in the middle.
+flex-wrap: wrap — items wrap to the next line on small screens instead of overflowing.
+flex-direction: column — stacks items vertically again. Great for mobile!
+
+Your challenge: add the .card-row styles, hit Run, and see the magic happen. Then add flex-wrap: wrap for bonus points!
+
+
+============================================================
+SESSION 10 — Navigation Bar + Multiple Pages
+Type: VIDEO | Duration: 35 min | XP: 80
+============================================================
+
+Almost every website has a navigation bar — that strip at the top with links to different sections. Today you're building one!
+
+[PAUSE]
+
+Here's the HTML for a nav bar. Type it at the very top of your body:
+
+[SHOW code:]
+<nav>
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+</nav>
+
+nav is a semantic tag — it tells the browser "this is navigation."
+The # in href is a placeholder link. In a real multi-page site you'd write the page name there.
+
+[PAUSE]
+
+Style it in your CSS:
+
+[SHOW code:]
+nav {
+  background-color: #1A237E;
+  padding: 0 40px;
+}
+
+nav ul {
+  display: flex;
+  list-style: none;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 16px 20px;
+  display: block;
+  font-weight: bold;
+}
+
+nav a:hover {
+  background-color: #283593;
+}
+
+list-style: none removes the bullet points.
+text-decoration: none removes the underline from links.
+display: flex on the ul puts the nav items side by side!
+
+Hit Run and your nav bar appears at the top of the preview. Hover over the links and watch the hover color change!
+
+[DEMO: show nav bar in the preview, highlight the hover effect]
+
+Your mission: add a styled nav bar to your page. Make it dark with white text and a hover effect!
+
+
+============================================================
+SESSION 11 — About Page + Contact Form
+Type: CODE | Duration: 30 min | XP: 120
+============================================================
+
+Two things today — a two-column About section and a styled contact form. Both are built right here in the editor!
+
+[PAUSE]
+
+First, the About section. Two columns: image on the left, text on the right — using Flexbox:
+
+[SHOW code:]
+.about-section {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  padding: 60px 40px;
+  background: white;
+}
+
+.about-image img {
+  width: 260px;
+  border-radius: 12px;
+}
+
+Flexbox handles the two-column layout automatically. Hit Run and see the image and text sit side by side in the preview!
+
+[PAUSE]
+
+Now the contact form. Forms let visitors send you messages:
+
+[SHOW code:]
+<form class="contact-form">
+  <label>Your Name</label>
+  <input type="text" placeholder="Enter your name">
+
+  <label>Your Email</label>
+  <input type="email" placeholder="Enter your email">
+
+  <label>Your Message</label>
+  <textarea placeholder="Type your message here..."></textarea>
+
+  <button type="submit">Send Message 🚀</button>
+</form>
+
+label — the text above each field.
+input — a single-line text box.
+textarea — a multi-line text area for longer messages.
+
+Style the form:
+
+[SHOW code:]
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+flex-direction: column stacks the fields vertically. gap: 12px adds space between them.
+
+Your challenge: build the About section and contact form from the starter code. Click Run to preview, click Solution to compare!
+
+
+============================================================
+SESSION 12 — Responsive Design: Mobile Ready!
+Type: DOCUMENT | Duration: 35 min | XP: 60
+============================================================
+
+Did you know more than HALF of all web browsing happens on phones?
+
+If your page only looks great in the preview panel but breaks on a phone screen, you're losing half your visitors immediately.
+
+Today you're making your page work beautifully on every screen — phone, tablet, and desktop. This is called responsive design.
+
+[PAUSE]
+
+Step 1 — one line of HTML. Add this inside your head tag:
+
+[SHOW code:]
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+Without this, mobile browsers zoom out and squish your whole page. This line tells them to use the real screen width.
+
+[PAUSE]
+
+Step 2 — media queries.
+
+A media query says: "Only apply this CSS when the screen is narrower than 600 pixels."
+
+Add this at the bottom of your CSS:
+
+[SHOW code:]
+@media (max-width: 600px) {
+  .card-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .about-section {
+    flex-direction: column;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  .contact-form {
+    margin: 20px;
+    padding: 20px;
+  }
+}
+
+Everything inside those curly braces ONLY activates on phone-sized screens. On a desktop, these rules are completely ignored!
+
+[PAUSE]
+
+Step 3 — test it! In the CodeQuest IDE, drag the preview panel narrower. Watch the cards stack vertically when the preview gets phone-sized. That's your media query activating!
+
+[DEMO: drag the preview panel to a narrow width, show cards stacking]
+
+[PAUSE]
+
+Pro tip — stop your page from stretching too wide on giant monitors:
+
+[SHOW code:]
+body {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+This centres your content and keeps it readable on any screen size.
+
+Read through the full reference document in this session and check off the mobile checklist before the final boss!
+
+
+============================================================
+SESSION 13 — BOSS: Build + Launch Your Website!
+Type: BOSS | Duration: 60 min | XP: 300
+============================================================
+
+This is it. The final boss.
+
+You've learned HTML, CSS, Flexbox, nav bars, forms, and responsive design. Now it's time to put it ALL together in one complete, polished website — built right here in the CodeQuest IDE.
+
+[PAUSE]
+
+Your checklist. Your finished website must have:
+
+One — a header with your name and a tagline.
+Two — a navigation bar with at least 3 links.
+Three — three styled cards in a Flexbox row.
+Four — an About section with a two-column layout.
+Five — a styled contact form.
+Six — responsive design with a media query.
+Seven — a Google Font applied to the whole page.
+Eight — consistent colors and spacing throughout.
+
+[PAUSE]
+
+The starter code in the editor gives you the HTML skeleton and empty CSS classes. You fill everything in — this is YOUR website, so make it personal!
+
+[DEMO: point to the starter code and the preview panel side by side]
+
+Don't rush. Take the full 60 minutes. Get every detail right.
+
+[PAUSE]
+
+Tips:
+
+Pick 2 or 3 main colors and stick to them — consistency looks professional.
+
+Use a Google Font that matches your personality.
+
+Drag the preview panel narrow to test your responsive design. Make sure nothing is cut off.
+
+Put your real name, your actual favourite things, and a real message. Make it YOURS — not just the example code.
+
+[PAUSE]
+
+When you're completely happy with it and the solution checker gives you the green light... you've done it.
+
+You started with a blank editor. Now you have a complete, responsive, styled website built entirely from scratch using HTML and CSS.
+
+[PAUSE]
+
+Not many people can say that. But YOU can.
+
+Welcome to the web, developer. I'll see you in the next course.
+
+[PAUSE]
+
+...Now go build something amazing.
+
+
+============================================================
+  END OF SCRIPT — BUILD YOUR FIRST WEBSITE
+  Total Sessions: 13 | Total XP: 1,340 | Age: 8–14
+  CodeQuest Learning Platform
+============================================================

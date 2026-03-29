@@ -43,7 +43,9 @@ async function register(req, res, next) {
     res.status(201).json({
       token,
       isNew: true,
-      user: { id: user.id, email: user.email, username: user.username, role: user.role, plan: user.plan }
+      user: { id: user.id, email: user.email, username: user.username,
+              displayName: user.displayName, avatarEmoji: user.avatarEmoji,
+              role: user.role, plan: user.plan }
     });
   } catch (err) {
     next(err);
@@ -71,6 +73,7 @@ async function login(req, res, next) {
     res.json({
       token,
       user: { id: user.id, email: user.email, username: user.username,
+              displayName: user.displayName, avatarEmoji: user.avatarEmoji,
               role: user.role, plan: user.plan, xp: user.xp,
               coins: user.coins, level: user.level, streakDays: user.streakDays }
     });
@@ -198,6 +201,7 @@ async function googleAuth(req, res, next) {
       token,
       isNew,
       user: { id: user.id, email: user.email, username: user.username,
+              displayName: user.displayName, avatarEmoji: user.avatarEmoji,
               role: user.role, plan: user.plan, xp: user.xp,
               coins: user.coins, level: user.level, streakDays: user.streakDays }
     });

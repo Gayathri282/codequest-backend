@@ -37,17 +37,36 @@ router.get('/students', requireAuth, requireAdmin, async (req, res, next) => {
         { email:    { contains: search, mode: 'insensitive' } }
       ]})
     };
-    const [students, total] = await Promise.all([
+    const [rawStudents, total] = await Promise.all([
       prisma.user.findMany({
         where, skip: (page - 1) * limit, take: Number(limit),
         orderBy: { createdAt: 'desc' },
         select: { id: true, email: true, username: true, displayName: true, age: true,
                   plan: true, xp: true, coins: true, level: true, streakDays: true,
-                  lastActiveAt: true, createdAt: true }
+                  avatarEmoji: true, lastActiveAt: true, createdAt: true,
+                  _count: { select: { progress: { where: { completed: true } } } } }
       }),
       prisma.user.count({ where })
     ]);
+    const students = rawStudents.map(s => ({
+      ...s,
+      completedSessions: s._count?.progress || 0,
+      _count: undefined,
+    }));
     res.json({ students, total, pages: Math.ceil(total / limit) });
+  } catch (err) { next(err); }
+});
+
+// GET /api/admin/students/:id/progress  — daily completions for student detail chart
+router.get('/students/:id/progress', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const since = new Date(Date.now() - 30 * 86400000);
+    const completions = await prisma.progress.findMany({
+      where: { userId: req.params.id, completed: true, completedAt: { gte: since } },
+      select: { completedAt: true, xpEarned: true, session: { select: { title: true, type: true } } },
+      orderBy: { completedAt: 'asc' },
+    });
+    res.json(completions);
   } catch (err) { next(err); }
 });
 

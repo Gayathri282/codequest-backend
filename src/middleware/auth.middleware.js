@@ -24,7 +24,12 @@ async function requireAuth(req, res, next) {
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    // Only treat JWT errors as 401. DB/network errors are 503 so the
+    // frontend does NOT wipe a valid token when the database is unavailable.
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+    return res.status(503).json({ error: 'Service temporarily unavailable' });
   }
 }
 

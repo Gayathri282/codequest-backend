@@ -184,6 +184,11 @@ model Progress {
   coinsEarned Int      @default(0)
   completedAt DateTime?
 
+  // Video watch tracking
+  videoExitSeconds Int?   // seconds where student last exited
+  videoMaxSeconds  Int?   // max seconds ever watched (never decreases)
+  videoDuration    Int?   // total video duration in seconds
+
   @@unique([userId, sessionId])
   @@map("progress")
 }
