@@ -4,10 +4,10 @@ const { Session } = require('../config/db');
 // GET /api/sessions/:id  — single session with quiz questions
 async function getSession(req, res, next) {
   try {
-    const session = await Session
-      .findById(req.params.id)
-      .populate({ path: 'quizQuestions', options: { sort: { order: 1 } } });
-
+    // session_controller.js — getSession
+const session = await Session
+  .findOne({ _id: req.params.id })
+  .populate({ path: 'quizQuestions', options: { sort: { order: 1 } } });
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
     // FREE plan can only access the first 4 sessions

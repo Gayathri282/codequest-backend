@@ -11,9 +11,10 @@ function isFilesArray(files) {
 }
 
 async function assertSessionAccess({ sessionId, user }) {
-  const session = await Session
-    .findById(sessionId)
-    .select('_id courseId order');
+  // editor_controller.js — assertSessionAccess
+const session = await Session
+  .findOne({ _id: sessionId })   // ← _id is the string "bfw-s1"
+  .select('_id courseId order');
 
   if (!session) return { error: { status: 404, body: { error: 'Session not found' } } };
 
