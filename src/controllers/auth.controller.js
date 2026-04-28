@@ -3,12 +3,10 @@ const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
 const crypto     = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/db');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-const prisma = new PrismaClient();
 
 function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {

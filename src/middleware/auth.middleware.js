@@ -1,7 +1,6 @@
 // backend/src/middleware/auth.middleware.js
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 // Verify JWT and attach user to req
 async function requireAuth(req, res, next) {
@@ -55,3 +54,4 @@ function requirePlan(...plans) {
 }
 
 module.exports = { requireAuth, requireAdmin, requirePlan };
+

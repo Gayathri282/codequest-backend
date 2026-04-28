@@ -1,8 +1,7 @@
 // backend/src/routes/admin.routes.js
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
 const { requireAuth, requireAdmin } = require('../middleware/auth.middleware');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 // GET /api/admin/stats  — overview numbers
 router.get('/stats', requireAuth, requireAdmin, async (req, res, next) => {
@@ -92,8 +91,6 @@ router.post('/send-reports', requireAuth, requireAdmin, async (req, res, next) =
 // GET /api/admin/badges  — list all badge definitions
 router.get('/badges', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
     const badges = await prisma.badge.findMany({ orderBy: { name: 'asc' } });
     res.json(badges);
   } catch (err) { next(err); }
@@ -102,8 +99,6 @@ router.get('/badges', requireAuth, requireAdmin, async (req, res, next) => {
 // POST /api/admin/badges  — create badge definition
 router.post('/badges', requireAuth, requireAdmin, async (req, res, next) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
     const badge = await prisma.badge.create({ data: req.body });
     res.status(201).json(badge);
   } catch (err) { next(err); }

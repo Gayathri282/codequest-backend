@@ -1,8 +1,8 @@
 // backend/src/routes/quiz.routes.js
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/db');
 const { requireAuth, requireAdmin } = require('../middleware/auth.middleware');
-const prisma = new PrismaClient();
+
 
 // GET /api/quiz/:sessionId  — fetch questions (locked if already completed)
 router.get('/:sessionId', requireAuth, async (req, res, next) => {
@@ -81,3 +81,4 @@ router.delete('/question/:id', requireAuth, requireAdmin, async (req, res, next)
 });
 
 module.exports = router;
+

@@ -1,6 +1,5 @@
 // backend/src/controllers/course.controller.js
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 // GET /api/courses  — all published courses with student progress
 async function getAllCourses(req, res, next) {
@@ -105,3 +104,4 @@ async function deleteCourse(req, res, next) {
 }
 
 module.exports = { getAllCourses, getCourse, createCourse, updateCourse, deleteCourse };
+

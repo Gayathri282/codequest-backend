@@ -1,8 +1,8 @@
 // backend/src/routes/user.routes.js
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth.middleware');
-const prisma = new PrismaClient();
+
 
 // PATCH /api/users/me  — update avatar, displayName
 router.patch('/me', requireAuth, async (req, res, next) => {
@@ -42,3 +42,4 @@ router.get('/children', requireAuth, async (req, res, next) => {
     res.json(children);
   } catch (err) { next(err); }
 });
+

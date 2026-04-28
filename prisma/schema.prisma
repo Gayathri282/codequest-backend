@@ -1,20 +1,14 @@
 // backend/prisma/schema.prisma
-// Run:  npx prisma migrate dev --name init
-//       npx prisma generate
+// MongoDB + Prisma schema for CodeQuest
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
-
-// ─────────────────────────────────────────────────────
-//  USERS
-// ─────────────────────────────────────────────────────
 
 enum Role {
   STUDENT
@@ -28,202 +22,13 @@ enum Plan {
   PREMIUM
 }
 
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  role          Role      @default(STUDENT)
-  plan          Plan      @default(FREE)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Student profile
-  username      String?   @unique
-  displayName   String?
-  avatarEmoji   String?   @default("🐸")
-  age           Int?
-  xp            Int       @default(0)
-  coins         Int       @default(0)
-  level         Int       @default(1)
-  streakDays    Int       @default(0)
-  lastActiveAt  DateTime?
-
-  // Password reset
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-
-  // Parent link
-  parentId      String?
-  parent        User?     @relation("ParentChildren", fields: [parentId], references: [id])
-  children      User[]    @relation("ParentChildren")
-
-  // Relations
-  progress      Progress[]
-  payments      Payment[]
-  earnedBadges  UserBadge[]
-
-  @@map("users")
-}
-
-// ─────────────────────────────────────────────────────
-//  COURSES
-// ─────────────────────────────────────────────────────
-
-model Course {
-  id               String    @id @default(uuid())
-  title            String
-  emoji            String
-  description      String?
-  color            String    @default("#00C8E8")
-  subject          String                          // "HTML/CSS", "Python", etc.
-  ageGroup         String    @default("5-13")
-  order            Int       @default(0)           // display order
-  isPublished      Boolean   @default(false)
-  isLocked         Boolean   @default(true)
-  unlocksAfter     String?                        // courseId that must be completed first
-  totalXp          Int       @default(0)
-  freeSessionCount Int       @default(4)          // sessions visible without PREMIUM
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  sessions    Session[]
-  progress    Progress[]
-
-  @@map("courses")
-}
-
-// ─────────────────────────────────────────────────────
-//  SESSIONS  (individual lessons within a course)
-// ─────────────────────────────────────────────────────
-
 enum SessionType {
-  VIDEO      // Video + optional IDE
-  DOCUMENT   // Reading / notes
-  QUIZ       // Multiple-choice quiz
-  CODE       // Code challenge only
-  BOSS       // Final boss level
+  VIDEO
+  DOCUMENT
+  QUIZ
+  CODE
+  BOSS
 }
-
-model Session {
-  id            String      @id @default(uuid())
-  courseId      String
-  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  title         String
-  type          SessionType
-  order         Int         @default(0)
-  isPublished   Boolean     @default(false)
-
-  // XP & gamification
-  xpReward      Int         @default(50)
-  coinsReward   Int         @default(5)
-  durationMins  Int         @default(5)
-
-  // Video session fields
-  videoUrl      String?     // Bunny.net embed URL
-  videoThumb    String?     // Thumbnail image URL
-  hasIde        Boolean     @default(false)
-  missionText   String?     // Instructions shown next to video
-
-  // Document session fields
-  docContent    String?     // Markdown content
-
-  // Code challenge fields
-  starterCode   String?
-  solutionCode  String?
-
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  quizQuestions QuizQuestion[]
-  progress      Progress[]
-
-  @@map("sessions")
-}
-
-// ─────────────────────────────────────────────────────
-//  QUIZ QUESTIONS
-// ─────────────────────────────────────────────────────
-
-model QuizQuestion {
-  id          String   @id @default(uuid())
-  sessionId   String
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  question    String
-  emoji       String?
-  optionA     String
-  optionB     String
-  optionC     String
-  optionD     String
-  correctAnswer String  // "A", "B", "C", or "D"
-  explanation String?
-  order       Int      @default(0)
-
-  createdAt   DateTime @default(now())
-
-  @@map("quiz_questions")
-}
-
-// ─────────────────────────────────────────────────────
-//  PROGRESS
-// ─────────────────────────────────────────────────────
-
-model Progress {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  sessionId   String
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  completed   Boolean  @default(false)
-  stars       Int      @default(0)   // 0-3
-  xpEarned    Int      @default(0)
-  coinsEarned Int      @default(0)
-  completedAt DateTime?
-
-  // Video watch tracking
-  videoExitSeconds Int?   // seconds where student last exited
-  videoMaxSeconds  Int?   // max seconds ever watched (never decreases)
-  videoDuration    Int?   // total video duration in seconds
-
-  @@unique([userId, sessionId])
-  @@map("progress")
-}
-
-// ─────────────────────────────────────────────────────
-//  BADGES
-// ─────────────────────────────────────────────────────
-
-model Badge {
-  id          String      @id @default(uuid())
-  emoji       String
-  name        String
-  description String
-  condition   String      // e.g. "complete_first_lesson", "7_day_streak"
-
-  earnedBy    UserBadge[]
-
-  @@map("badges")
-}
-
-model UserBadge {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badgeId   String
-  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  earnedAt  DateTime @default(now())
-
-  @@unique([userId, badgeId])
-  @@map("user_badges")
-}
-
-// ─────────────────────────────────────────────────────
-//  PAYMENTS
-// ─────────────────────────────────────────────────────
 
 enum PaymentStatus {
   PENDING
@@ -232,32 +37,199 @@ enum PaymentStatus {
   REFUNDED
 }
 
-model Payment {
-  id              String        @id @default(uuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
+model User {
+  id           String   @id @default(uuid()) @map("_id")
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  plan         Plan     @default(FREE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  razorpayOrderId   String?     @unique
-  razorpayPaymentId String?     @unique
+  username     String?  @unique
+  displayName  String?
+  avatarEmoji  String?  @default("🐸")
+  age          Int?
+  xp           Int      @default(0)
+  coins        Int      @default(0)
+  level        Int      @default(1)
+  streakDays   Int      @default(0)
+  lastActiveAt DateTime?
+
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
+  parentId String?
+  parent   User?  @relation("ParentChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children User[] @relation("ParentChildren")
+
+  progress     Progress[]
+  payments     Payment[]
+  earnedBadges UserBadge[]
+
+  @@map("users")
+}
+
+model Course {
+  id               String   @id @default(uuid()) @map("_id")
+  title            String
+  emoji            String
+  description      String?
+  color            String   @default("#00C8E8")
+  subject          String
+  ageGroup         String   @default("5-13")
+  order            Int      @default(0)
+  isPublished      Boolean  @default(false)
+  isLocked         Boolean  @default(true)
+  unlocksAfter     String?
+  totalXp          Int      @default(0)
+  freeSessionCount Int      @default(4)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sessions Session[]
+  progress Progress[]
+
+  @@map("courses")
+}
+
+model Session {
+  id       String @id @default(uuid()) @map("_id")
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  title       String
+  type        SessionType
+  order       Int      @default(0)
+  isPublished Boolean  @default(false)
+  xpReward    Int      @default(50)
+  coinsReward Int      @default(5)
+  durationMins Int     @default(5)
+
+  videoUrl    String?
+  videoThumb  String?
+  hasIde      Boolean @default(false)
+  missionText String?
+  docContent  String?
+  starterCode String?
+  solutionCode String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quizQuestions QuizQuestion[]
+  progress      Progress[]
+
+  @@map("sessions")
+}
+
+model QuizQuestion {
+  id        String  @id @default(uuid()) @map("_id")
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id])
+
+  question      String
+  emoji         String?
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String
+  explanation   String?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@map("quiz_questions")
+}
+
+model Progress {
+  id        String  @id @default(uuid()) @map("_id")
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  courseId  String
+  course    Course  @relation(fields: [courseId], references: [id])
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id])
+
+  completed   Boolean   @default(false)
+  stars       Int       @default(0)
+  xpEarned    Int       @default(0)
+  coinsEarned Int       @default(0)
+  completedAt DateTime?
+
+  videoExitSeconds Int?
+  videoMaxSeconds  Int?
+  videoDuration    Int?
+
+  @@unique([userId, sessionId])
+  @@map("progress")
+}
+
+model EditorDraft {
+  id        String   @id @default(uuid()) @map("_id")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+
+  // Stored as an array of { name, content } objects.
+  files     Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, sessionId])
+  @@map("editor_drafts")
+}
+
+model Badge {
+  id          String @id @default(uuid()) @map("_id")
+  emoji       String
+  name        String
+  description String
+  condition   String
+
+  earnedBy UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(uuid()) @map("_id")
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Payment {
+  id     String @id @default(uuid()) @map("_id")
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
   razorpaySignature String?
 
-  plan            Plan
-  amount          Int           // in paise (₹299 = 29900)
-  currency        String        @default("INR")
-  status          PaymentStatus @default(PENDING)
+  plan     Plan
+  amount   Int
+  currency String        @default("INR")
+  status   PaymentStatus @default(PENDING)
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("payments")
 }
 
-// ─────────────────────────────────────────────────────
-//  SETTINGS  (key-value store for admin-configurable values)
-// ─────────────────────────────────────────────────────
-
 model Setting {
-  key       String   @id
+  key       String   @id @map("_id")
   value     String
   updatedAt DateTime @updatedAt
 

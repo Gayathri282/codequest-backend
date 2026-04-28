@@ -15,6 +15,7 @@ const adminRoutes    = require('./routes/admin.routes');
 const uploadRoutes   = require('./routes/upload.routes');
 const videoRoutes    = require('./routes/video.routes');
 const userRoutes     = require('./routes/user.routes');
+const editorRoutes   = require('./routes/editor.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app  = express();
@@ -52,6 +53,7 @@ app.use('/api/admin',    adminRoutes);
 app.use('/api/users',    userRoutes);
 app.use('/api/upload',   uploadRoutes);
 app.use('/api/video',    videoRoutes);
+app.use('/api/editor',   editorRoutes);
 
 // ── Health check ──────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date(), env: process.env.NODE_ENV }));

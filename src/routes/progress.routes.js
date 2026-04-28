@@ -2,8 +2,7 @@
 const router = require('express').Router();
 const c = require('../controllers/progress.controller');
 const { requireAuth } = require('../middleware/auth.middleware');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 router.post('/complete',       requireAuth, c.completeSession);
 router.get('/report/:userId',  requireAuth, c.getProgressReport);
@@ -45,3 +44,4 @@ router.patch('/video-watch', requireAuth, async (req, res, next) => {
 });
 
 module.exports = router;
+

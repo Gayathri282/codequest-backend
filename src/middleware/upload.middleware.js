@@ -1,5 +1,5 @@
 // backend/src/middleware/upload.middleware.js
-// Multer config for thumbnail / document uploads (stored in Supabase Storage)
+// Multer config for thumbnail / document uploads (stored in MongoDB GridFS)
 const multer  = require('multer');
 const path    = require('path');
 

@@ -1,8 +1,7 @@
 // backend/src/controllers/payment.controller.js
 const Razorpay = require('razorpay');
 const crypto   = require('crypto');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -161,3 +160,4 @@ async function getPricing(req, res, next) {
 }
 
 module.exports = { createOrder, verifyPayment, webhook, getHistory, getPricing };
+

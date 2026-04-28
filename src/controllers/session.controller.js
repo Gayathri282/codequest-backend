@@ -1,6 +1,5 @@
 // backend/src/controllers/session.controller.js
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/db');
 
 // GET /api/sessions/:id  — single session with quiz questions
 async function getSession(req, res, next) {
@@ -17,6 +16,9 @@ async function getSession(req, res, next) {
     if (session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
     }
+
+    // Never send admin-only solution code to students.
+    if (req.user.role !== 'ADMIN') delete session.solutionCode;
 
     res.json(session);
   } catch (err) {
@@ -88,3 +90,4 @@ async function reorderSessions(req, res, next) {
 }
 
 module.exports = { getSession, createSession, updateSession, deleteSession, reorderSessions };
+
