@@ -1,15 +1,13 @@
 // backend/src/controllers/session.controller.js
-const prisma = require('../config/db');
+const { Session } = require('../config/db');
 
 // GET /api/sessions/:id  — single session with quiz questions
 async function getSession(req, res, next) {
   try {
-    const session = await prisma.session.findUnique({
-      where: { id: req.params.id },
-      include: {
-        quizQuestions: { orderBy: { order: 'asc' } }
-      }
-    });
+    const session = await Session
+      .findById(req.params.id)
+      .populate({ path: 'quizQuestions', options: { sort: { order: 1 } } });
+
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
     // FREE plan can only access the first 4 sessions
@@ -17,10 +15,12 @@ async function getSession(req, res, next) {
       return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
     }
 
-    // Never send admin-only solution code to students.
-    if (req.user.role !== 'ADMIN') delete session.solutionCode;
+    const sessionObj = session.toObject();
 
-    res.json(session);
+    // Never send admin-only solution code to students
+    if (req.user.role !== 'ADMIN') delete sessionObj.solutionCode;
+
+    res.json(sessionObj);
   } catch (err) {
     next(err);
   }
@@ -35,14 +35,12 @@ async function createSession(req, res, next) {
       docContent, starterCode, solutionCode
     } = req.body;
 
-    const session = await prisma.session.create({
-      data: {
-        courseId, title, type, order: order || 0,
-        xpReward: xpReward || 50, coinsReward: coinsReward || 5,
-        durationMins: durationMins || 5,
-        videoUrl, videoThumb, hasIde: hasIde || false, missionText,
-        docContent, starterCode, solutionCode
-      }
+    const session = await Session.create({
+      courseId, title, type, order: order || 0,
+      xpReward: xpReward || 50, coinsReward: coinsReward || 5,
+      durationMins: durationMins || 5,
+      videoUrl, videoThumb, hasIde: hasIde || false, missionText,
+      docContent, starterCode, solutionCode,
     });
     res.status(201).json(session);
   } catch (err) {
@@ -53,10 +51,12 @@ async function createSession(req, res, next) {
 // PATCH /api/sessions/:id  (admin)
 async function updateSession(req, res, next) {
   try {
-    const session = await prisma.session.update({
-      where: { id: req.params.id },
-      data: req.body
-    });
+    const session = await Session.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!session) return res.status(404).json({ error: 'Session not found' });
     res.json(session);
   } catch (err) {
     next(err);
@@ -66,7 +66,7 @@ async function updateSession(req, res, next) {
 // DELETE /api/sessions/:id  (admin)
 async function deleteSession(req, res, next) {
   try {
-    await prisma.session.delete({ where: { id: req.params.id } });
+    await Session.findByIdAndDelete(req.params.id);
     res.json({ message: 'Session deleted' });
   } catch (err) {
     next(err);
@@ -80,7 +80,7 @@ async function reorderSessions(req, res, next) {
     const updates = req.body;
     await Promise.all(
       updates.map(({ id, order }) =>
-        prisma.session.update({ where: { id }, data: { order } })
+        Session.findByIdAndUpdate(id, { order })
       )
     );
     res.json({ message: 'Reordered' });
@@ -90,4 +90,3 @@ async function reorderSessions(req, res, next) {
 }
 
 module.exports = { getSession, createSession, updateSession, deleteSession, reorderSessions };
-

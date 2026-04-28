@@ -1,40 +1,41 @@
 // backend/src/controllers/course.controller.js
-const prisma = require('../config/db');
+const { Course, Progress } = require('../config/db');
 
 // GET /api/courses  — all published courses with student progress
 async function getAllCourses(req, res, next) {
   try {
     const isAdmin = req.user?.role === 'ADMIN';
-    const courses = await prisma.course.findMany({
-      where: isAdmin ? undefined : { isLocked: false },
-      orderBy: { order: 'asc' },
-      include: {
-        sessions: {
-          ...(isAdmin ? {} : { where: { isPublished: true } }),
-          orderBy: { order: 'asc' },
-          select: { id: true, title: true, type: true, order: true, xpReward: true, coinsReward: true, durationMins: true, isPublished: true }
-        }
-      }
-    });
 
-    // Attach this student's progress to each course
+    const courseQuery = isAdmin ? {} : { isLocked: false };
+    const sessionFilter = isAdmin ? {} : { isPublished: true };
+
+    const courses = await Course
+      .find(courseQuery)
+      .sort({ order: 1 })
+      .populate({
+        path: 'sessions',
+        match: sessionFilter,
+        select: 'id title type order xpReward coinsReward durationMins isPublished',
+        options: { sort: { order: 1 } },
+      });
+
     const userId = req.user?.id;
     if (userId) {
-      const progressRecords = await prisma.progress.findMany({
-        where: { userId, completed: true },
-        select: { sessionId: true, stars: true }
-      });
-      const progressMap = new Map(progressRecords.map(p => [p.sessionId, p]));
+      const progressRecords = await Progress.find({ userId, completed: true }).select('sessionId stars');
+      const progressMap = new Map(progressRecords.map(p => [p.sessionId.toString(), p]));
 
-      const coursesWithProgress = courses.map(course => ({
-        ...course,
-        sessions: course.sessions.map(s => ({
-          ...s,
-          completed: progressMap.has(s.id),
-          stars: progressMap.get(s.id)?.stars || 0
-        })),
-        completedCount: course.sessions.filter(s => progressMap.has(s.id)).length
-      }));
+      const coursesWithProgress = courses.map(course => {
+        const sessions = (course.sessions || []).map(s => ({
+          ...s.toObject(),
+          completed: progressMap.has(s._id.toString()),
+          stars: progressMap.get(s._id.toString())?.stars || 0,
+        }));
+        return {
+          ...course.toObject(),
+          sessions,
+          completedCount: sessions.filter(s => s.completed).length,
+        };
+      });
 
       return res.json(coursesWithProgress);
     }
@@ -49,15 +50,16 @@ async function getAllCourses(req, res, next) {
 async function getCourse(req, res, next) {
   try {
     const isAdmin = req.user?.role === 'ADMIN';
-    const course = await prisma.course.findUnique({
-      where: { id: req.params.id },
-      include: {
-        sessions: {
-          ...(isAdmin ? {} : { where: { isPublished: true } }),
-          orderBy: { order: 'asc' }
-        }
-      }
-    });
+    const sessionFilter = isAdmin ? {} : { isPublished: true };
+
+    const course = await Course
+      .findById(req.params.id)
+      .populate({
+        path: 'sessions',
+        match: sessionFilter,
+        options: { sort: { order: 1 } },
+      });
+
     if (!course) return res.status(404).json({ error: 'Course not found' });
     res.json(course);
   } catch (err) {
@@ -71,8 +73,9 @@ async function getCourse(req, res, next) {
 async function createCourse(req, res, next) {
   try {
     const { title, emoji, description, color, subject, ageGroup, order, unlocksAfter } = req.body;
-    const course = await prisma.course.create({
-      data: { title, emoji, description, color, subject, ageGroup, order: order || 0, unlocksAfter }
+    const course = await Course.create({
+      title, emoji, description, color, subject, ageGroup,
+      order: order || 0, unlocksAfter,
     });
     res.status(201).json(course);
   } catch (err) {
@@ -83,10 +86,12 @@ async function createCourse(req, res, next) {
 // PATCH /api/courses/:id
 async function updateCourse(req, res, next) {
   try {
-    const course = await prisma.course.update({
-      where: { id: req.params.id },
-      data: req.body
-    });
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!course) return res.status(404).json({ error: 'Course not found' });
     res.json(course);
   } catch (err) {
     next(err);
@@ -96,7 +101,7 @@ async function updateCourse(req, res, next) {
 // DELETE /api/courses/:id
 async function deleteCourse(req, res, next) {
   try {
-    await prisma.course.delete({ where: { id: req.params.id } });
+    await Course.findByIdAndDelete(req.params.id);
     res.json({ message: 'Course deleted' });
   } catch (err) {
     next(err);
@@ -104,4 +109,3 @@ async function deleteCourse(req, res, next) {
 }
 
 module.exports = { getAllCourses, getCourse, createCourse, updateCourse, deleteCourse };
-

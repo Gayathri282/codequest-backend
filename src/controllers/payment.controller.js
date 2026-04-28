@@ -1,7 +1,7 @@
 // backend/src/controllers/payment.controller.js
 const Razorpay = require('razorpay');
 const crypto   = require('crypto');
-const prisma = require('../config/db');
+const { Payment, Setting, User } = require('../config/db');
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -14,14 +14,13 @@ const DEFAULT_PRICES = {
 
 async function getPlanPrice(plan) {
   try {
-    const row = await prisma.setting.findUnique({ where: { key: `PRICE_${plan}` } });
+    const row = await Setting.findOne({ key: `PRICE_${plan}` });
     if (row) return parseInt(row.value, 10);
   } catch (_) {}
   return DEFAULT_PRICES[plan] ?? null;
 }
 
 // POST /api/payments/create-order
-// Frontend calls this → get order id → open Razorpay modal
 async function createOrder(req, res, next) {
   try {
     const { plan } = req.body;  // "PREMIUM"
@@ -33,25 +32,21 @@ async function createOrder(req, res, next) {
       order = await razorpay.orders.create({
         amount,
         currency: 'INR',
-        receipt: `cq_${req.user.id.replace(/-/g,'').slice(0,20)}_${Date.now().toString().slice(-8)}`,
+        receipt: `cq_${req.user.id.toString().replace(/-/g,'').slice(0,20)}_${Date.now().toString().slice(-8)}`,
         notes: { userId: req.user.id, plan }
       });
     } catch (rzErr) {
-      // Razorpay SDK throws { statusCode, error: { description } } — not a standard Error
       const msg = rzErr?.error?.description || rzErr?.error?.code || 'Payment gateway error';
       return res.status(rzErr?.statusCode || 502).json({ error: msg });
     }
 
-    // Save pending payment
-    await prisma.payment.create({
-      data: {
-        userId: req.user.id,
-        razorpayOrderId: order.id,
-        plan,
-        amount,
-        currency: 'INR',
-        status: 'PENDING'
-      }
+    await Payment.create({
+      userId:          req.user.id,
+      razorpayOrderId: order.id,
+      plan,
+      amount,
+      currency: 'INR',
+      status:   'PENDING',
     });
 
     res.json({ orderId: order.id, amount, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID });
@@ -61,7 +56,6 @@ async function createOrder(req, res, next) {
 }
 
 // POST /api/payments/verify
-// Called after Razorpay checkout succeeds on frontend
 async function verifyPayment(req, res, next) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -76,22 +70,17 @@ async function verifyPayment(req, res, next) {
       return res.status(400).json({ error: 'Payment signature mismatch' });
     }
 
-    // Fetch payment record
-    const payment = await prisma.payment.findUnique({
-      where: { razorpayOrderId: razorpay_order_id }
-    });
+    const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
     if (!payment) return res.status(404).json({ error: 'Payment record not found' });
 
-    // Update payment + user plan
-    await prisma.$transaction([
-      prisma.payment.update({
-        where: { id: payment.id },
-        data: { razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature, status: 'PAID' }
+    // Update payment + user plan atomically where possible
+    await Promise.all([
+      Payment.findByIdAndUpdate(payment._id, {
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature,
+        status: 'PAID',
       }),
-      prisma.user.update({
-        where: { id: payment.userId },
-        data: { plan: payment.plan }
-      })
+      User.findByIdAndUpdate(payment.userId, { plan: payment.plan }),
     ]);
 
     res.json({ success: true, plan: payment.plan });
@@ -103,7 +92,7 @@ async function verifyPayment(req, res, next) {
 // POST /api/payments/webhook  — Razorpay server-to-server events
 async function webhook(req, res, next) {
   try {
-    const sig = req.headers['x-razorpay-signature'];
+    const sig  = req.headers['x-razorpay-signature'];
     const body = req.body; // raw buffer
 
     const expectedSig = crypto
@@ -117,11 +106,11 @@ async function webhook(req, res, next) {
 
     if (event.event === 'payment.captured') {
       const orderId = event.payload.payment.entity.order_id;
-      const payment = await prisma.payment.findUnique({ where: { razorpayOrderId: orderId } });
+      const payment = await Payment.findOne({ razorpayOrderId: orderId });
       if (payment && payment.status !== 'PAID') {
-        await prisma.$transaction([
-          prisma.payment.update({ where: { id: payment.id }, data: { status: 'PAID' } }),
-          prisma.user.update({ where: { id: payment.userId }, data: { plan: payment.plan } })
+        await Promise.all([
+          Payment.findByIdAndUpdate(payment._id, { status: 'PAID' }),
+          User.findByIdAndUpdate(payment.userId, { plan: payment.plan }),
         ]);
       }
     }
@@ -135,11 +124,11 @@ async function webhook(req, res, next) {
 // GET /api/payments/history  (admin)
 async function getHistory(req, res, next) {
   try {
-    const payments = await prisma.payment.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { user: { select: { email: true, username: true } } },
-      take: 50
-    });
+    const payments = await Payment
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate({ path: 'user', select: 'email username' });
     res.json(payments);
   } catch (err) {
     next(err);
@@ -151,8 +140,8 @@ async function getPricing(req, res, next) {
   try {
     const premiumPaise = await getPlanPrice('PREMIUM');
     res.json({
-      PREMIUM: premiumPaise,
-      PREMIUM_RUPEES: Math.round(premiumPaise / 100),
+      PREMIUM:         premiumPaise,
+      PREMIUM_RUPEES:  Math.round(premiumPaise / 100),
     });
   } catch (err) {
     next(err);
@@ -160,4 +149,3 @@ async function getPricing(req, res, next) {
 }
 
 module.exports = { createOrder, verifyPayment, webhook, getHistory, getPricing };
-

@@ -1,6 +1,6 @@
 // backend/src/controllers/admin.controller.js
 // Platform-wide admin actions: settings save, bulk operations, analytics
-const prisma = require('../config/db');
+const { User, Progress, Payment, Session, Setting } = require('../config/db');
 
 // GET /api/admin/analytics  — richer analytics beyond basic stats
 async function getAnalytics(req, res, next) {
@@ -8,63 +8,56 @@ async function getAnalytics(req, res, next) {
     const { days = 30 } = req.query;
     const since = new Date(Date.now() - Number(days) * 86400000);
 
-    const [
-      newStudents,
-      completions,
-      revenueData,
-      popularSessions,
-    ] = await Promise.all([
-      // New students per day (last N days)
-      prisma.user.groupBy({
-        by: ['createdAt'],
-        where: { role: 'STUDENT', createdAt: { gte: since } },
-        _count: true,
-      }),
-
-      // Completions per day
-      prisma.progress.groupBy({
-        by: ['completedAt'],
-        where: { completed: true, completedAt: { gte: since } },
-        _count: true,
-      }),
-
-      // Revenue by plan
-      prisma.payment.groupBy({
-        by: ['plan'],
-        where: { status: 'PAID' },
-        _sum: { amount: true },
-        _count: true,
-      }),
-
-      // Top 5 most-completed sessions
-      prisma.progress.groupBy({
-        by: ['sessionId'],
-        where: { completed: true },
-        _count: { sessionId: true },
-        orderBy: { _count: { sessionId: 'desc' } },
-        take: 5,
-      }),
+    // New students per day (last N days)
+    const newStudents = await User.aggregate([
+      { $match: { role: 'STUDENT', createdAt: { $gte: since } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
     ]);
 
-    // Enrich session data with titles
-    const sessionIds = popularSessions.map(s => s.sessionId);
-    const sessions = await prisma.session.findMany({
-      where: { id: { in: sessionIds } },
-      select: { id: true, title: true, type: true },
-    });
-    const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s]));
+    // Completions per day
+    const completions = await Progress.aggregate([
+      { $match: { completed: true, completedAt: { $gte: since } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt' } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Revenue by plan
+    const revenueData = await Payment.aggregate([
+      { $match: { status: 'PAID' } },
+      {
+        $group: {
+          _id:     '$plan',
+          revenue: { $sum: '$amount' },
+          count:   { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Top 5 most-completed sessions
+    const popularSessions = await Progress.aggregate([
+      { $match: { completed: true } },
+      { $group: { _id: '$sessionId', completions: { $sum: 1 } } },
+      { $sort: { completions: -1 } },
+      { $limit: 5 },
+    ]);
+
+    // Enrich with session titles
+    const sessionIds = popularSessions.map(s => s._id);
+    const sessions   = await Session.find({ _id: { $in: sessionIds } }).select('_id title type');
+    const sessionMap = Object.fromEntries(sessions.map(s => [s._id.toString(), s]));
 
     res.json({
       newStudents,
       completions,
       revenueByPlan: revenueData.map(r => ({
-        plan:    r.plan,
-        revenue: r._sum.amount || 0,
-        count:   r._count,
+        plan:    r._id,
+        revenue: r.revenue || 0,
+        count:   r.count,
       })),
       popularSessions: popularSessions.map(s => ({
-        ...sessionMap[s.sessionId],
-        completions: s._count.sessionId,
+        ...sessionMap[s._id.toString()]?.toObject(),
+        completions: s.completions,
       })),
     });
   } catch (err) {
@@ -75,7 +68,7 @@ async function getAnalytics(req, res, next) {
 // GET /api/admin/settings
 async function getSettings(req, res, next) {
   try {
-    const rows = await prisma.setting.findMany();
+    const rows     = await Setting.find();
     const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
     res.json(settings);
   } catch (err) {
@@ -83,17 +76,17 @@ async function getSettings(req, res, next) {
   }
 }
 
-// PATCH /api/admin/settings  — upsert key-value pairs into the settings table
+// PATCH /api/admin/settings  — upsert key-value pairs into the settings collection
 async function saveSettings(req, res, next) {
   try {
     const entries = Object.entries(req.body);
     await Promise.all(
       entries.map(([key, value]) =>
-        prisma.setting.upsert({
-          where:  { key },
-          update: { value: String(value) },
-          create: { key,  value: String(value) },
-        })
+        Setting.findOneAndUpdate(
+          { key },
+          { key, value: String(value) },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
       )
     );
     res.json({ message: 'Settings saved', updatedKeys: entries.map(([k]) => k) });
