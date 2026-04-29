@@ -12,7 +12,7 @@ router.get('/:sessionId', requireAuth, async (req, res, next) => {
     }
 
     const existing = await Progress.findOne({
-      userId:    req.user.id,
+      userId: req.user.id,
       sessionId: req.params.sessionId,
     }).select('completed stars');
 
@@ -24,16 +24,16 @@ router.get('/:sessionId', requireAuth, async (req, res, next) => {
       .find({ sessionId: req.params.sessionId })
       .sort({ order: 1 })
       .select('_id question emoji optionA optionB optionC optionD order');
-      // correctAnswer intentionally excluded
 
-    res.json(questions);
+    // Explicitly add id field so frontend can key answers correctly
+    res.json(questions.map(q => ({ ...q.toObject(), id: q._id.toString() })));
   } catch (err) { next(err); }
 });
 
 // POST /api/quiz/:sessionId/submit
 router.post('/:sessionId/submit', requireAuth, async (req, res, next) => {
   try {
-    const { answers } = req.body; // { questionId: "A"|"B"|"C"|"D" }
+    const { answers } = req.body;
 
     const session = await Session.findById(req.params.sessionId).select('order');
     if (session && session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
@@ -44,14 +44,16 @@ router.post('/:sessionId/submit', requireAuth, async (req, res, next) => {
 
     let correct = 0;
     const results = questions.map(q => {
-      const chosen    = answers[q._id.toString()];
+      const qid = q._id.toString();
+      // answers may be keyed by _id string or id string
+      const chosen = answers[qid] ?? answers[q.id] ?? null;
       const isCorrect = chosen === q.correctAnswer;
       if (isCorrect) correct++;
-      return { questionId: q._id, chosen, correct: isCorrect, explanation: q.explanation };
+      return { questionId: qid, chosen, correct: isCorrect, explanation: q.explanation };
     });
 
     const total = questions.length;
-    const stars  = correct === total ? 3 : correct >= total * 0.7 ? 2 : correct > 0 ? 1 : 0;
+    const stars = correct === total ? 3 : correct >= total * 0.7 ? 2 : correct > 0 ? 1 : 0;
     res.json({ correct, total, stars, results });
   } catch (err) { next(err); }
 });
