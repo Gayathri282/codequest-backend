@@ -8,7 +8,7 @@ const cors      = require('cors');
 const helmet    = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { connectDB } = require('./config/db');
-
+const assetsRoutes = require('./routes/assets.routes');
 const authRoutes     = require('./routes/auth.routes');
 const courseRoutes   = require('./routes/course.routes');
 const sessionRoutes  = require('./routes/session.routes');
@@ -59,6 +59,7 @@ app.use('/api/admin',    adminRoutes);
 app.use('/api/users',    userRoutes);
 app.use('/api/upload',   uploadRoutes);
 app.use('/api/video',    videoRoutes);
+app.use('/api/assets', assetsRoutes);
 // with your other app.use() routes
 
 
