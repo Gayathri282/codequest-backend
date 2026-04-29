@@ -5,7 +5,7 @@ const sessionSchema = new mongoose.Schema(
     courseId:    { type: String, required: true },
     title:       { type: String, required: true },
     slug:        { type: String },          // ← remove required:true
-    type:        { type: String, enum: ['LESSON', 'QUIZ', 'IDE', 'VIDEO'], default: 'LESSON' }, // ← add VIDEO
+    type:        { type: String, enum: ['VIDEO', 'DOCUMENT', 'QUIZ', 'CODE', 'BOSS', 'LESSON', 'IDE'], default: 'VIDEO' },
     order:       { type: Number, required: true },
     videoUrl:    { type: String },
     videoThumb:  { type: String },

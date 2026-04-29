@@ -6,7 +6,7 @@ async function getSession(req, res, next) {
   try {
     // session_controller.js — getSession
 const session = await Session
-  .findOne({ _id: req.params.id })
+  .findById(req.params.id)
   .populate({ path: 'quizQuestions', options: { sort: { order: 1 } } });
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -27,6 +27,8 @@ const session = await Session
 }
 
 // POST /api/sessions  (admin)
+const { v4: uuidv4 } = require('uuid'); // npm install uuid if not already installed
+
 async function createSession(req, res, next) {
   try {
     const {
@@ -35,7 +37,11 @@ async function createSession(req, res, next) {
       docContent, starterCode, solutionCode
     } = req.body;
 
+    // Auto-generate a slug-style _id from courseId + order
+    const _id = `${courseId}-s${order || Date.now()}`;
+
     const session = await Session.create({
+      _id,
       courseId, title, type, order: order || 0,
       xpReward: xpReward || 50, coinsReward: coinsReward || 5,
       durationMins: durationMins || 5,
