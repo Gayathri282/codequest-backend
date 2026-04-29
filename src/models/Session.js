@@ -20,7 +20,7 @@ const sessionSchema = new mongoose.Schema(
     xpReward:    { type: Number, default: 50 },
     coinsReward: { type: Number, default: 10 },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 module.exports = mongoose.model('Session', sessionSchema);
