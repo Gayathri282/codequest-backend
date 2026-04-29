@@ -8,9 +8,9 @@ const fileSchema = new mongoose.Schema({
 
 const editorDraftSchema = new mongoose.Schema(
   {
+        sessionId: { type: String, required: true },
+    courseId:  { type: String, required: true },
     userId:    { type: String, required: true },
-    sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
-    courseId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
     files:     { type: [fileSchema], default: [] },
   },
   { timestamps: true }
