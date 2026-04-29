@@ -27,8 +27,6 @@ const session = await Session
 }
 
 // POST /api/sessions  (admin)
-const { v4: uuidv4 } = require('uuid'); // npm install uuid if not already installed
-
 async function createSession(req, res, next) {
   try {
     const {
@@ -37,12 +35,20 @@ async function createSession(req, res, next) {
       docContent, starterCode, solutionCode
     } = req.body;
 
+    if (!courseId) return res.status(400).json({ error: 'courseId is required' });
+    if (!title || !String(title).trim()) return res.status(400).json({ error: 'title is required' });
+
+    const orderNum = Number(order);
+    if (!Number.isFinite(orderNum) || orderNum < 1) {
+      return res.status(400).json({ error: 'order must be a positive number' });
+    }
+
     // Auto-generate a slug-style _id from courseId + order
-    const _id = `${courseId}-s${order || Date.now()}`;
+    const _id = `${String(courseId)}-s${orderNum}`;
 
     const session = await Session.create({
       _id,
-      courseId, title, type, order: order || 0,
+      courseId, title, type, order: orderNum,
       xpReward: xpReward || 50, coinsReward: coinsReward || 5,
       durationMins: durationMins || 5,
       videoUrl, videoThumb, hasIde: hasIde || false, missionText,
