@@ -44,7 +44,7 @@ app.use('/api/video/',        rateLimit({ windowMs: 60*60*1000, max: 20  }));
 
 // ── Body parsing ──────────────────────────────────────────────────
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ── Routes ────────────────────────────────────────────────────────

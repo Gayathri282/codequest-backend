@@ -16,6 +16,7 @@ const sessionSchema = new mongoose.Schema(
     isPro:       { type: Boolean, default: false },
     missionText: { type: String },
     starterCode: { type: String },
+    starterFiles:{ type: [{ name: String, content: String }], default: undefined }, // [{ name, content }]
     solutionCode:{ type: String },
     xpReward:    { type: Number, default: 50 },
     coinsReward: { type: Number, default: 10 },

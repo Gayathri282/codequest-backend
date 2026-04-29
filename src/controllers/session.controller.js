@@ -32,7 +32,7 @@ async function createSession(req, res, next) {
     const {
       courseId, title, type, order, xpReward, coinsReward,
       durationMins, videoUrl, videoThumb, hasIde, missionText,
-      docContent, starterCode, solutionCode
+      docContent, starterCode, starterFiles, solutionCode
     } = req.body;
 
     if (!courseId) return res.status(400).json({ error: 'courseId is required' });
@@ -52,7 +52,13 @@ async function createSession(req, res, next) {
       xpReward: xpReward || 50, coinsReward: coinsReward || 5,
       durationMins: durationMins || 5,
       videoUrl, videoThumb, hasIde: hasIde || false, missionText,
-      docContent, starterCode, solutionCode,
+      docContent, starterCode,
+      starterFiles: Array.isArray(starterFiles)
+        ? starterFiles
+          .filter(f => f && typeof f === 'object' && typeof f.name === 'string')
+          .map(f => ({ name: f.name, content: typeof f.content === 'string' ? f.content : (f.content == null ? '' : String(f.content)) }))
+        : undefined,
+      solutionCode,
     });
     res.status(201).json(session);
   } catch (err) {
