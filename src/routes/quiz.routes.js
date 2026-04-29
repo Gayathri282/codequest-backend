@@ -1,22 +1,104 @@
-// src/models/QuizQuestion.js
-const mongoose = require('mongoose');
+// src/routes/quiz.routes.js
+const router = require('express').Router();
+const { requireAuth, requireAdmin } = require('../middleware/auth.middleware');
+const { Session, Progress, QuizQuestion } = require('../config/db');
 
-const quizQuestionSchema = new mongoose.Schema(
-  {
-    sessionId:     { type: String, required: true },
-    question:      { type: String, required: true },
-    emoji:         { type: String },
-    optionA:       { type: String, required: true },
-    optionB:       { type: String, required: true },
-    optionC:       { type: String },
-    optionD:       { type: String },
-    correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
-    explanation:   { type: String },
-    order:         { type: Number, default: 0 },
-  },
-  { timestamps: true }
-);
+// GET /api/quiz/:sessionId
+router.get('/:sessionId', requireAuth, async (req, res, next) => {
+  try {
+    const session = await Session.findById(req.params.sessionId).select('order');
+    if (session && session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
+    }
 
-quizQuestionSchema.index({ sessionId: 1, order: 1 });
+    const existing = await Progress.findOne({
+      userId:    req.user.id,
+      sessionId: req.params.sessionId,
+    }).select('completed stars');
 
-module.exports = mongoose.model('QuizQuestion', quizQuestionSchema);
+    if (existing?.completed) {
+      return res.json({ alreadyCompleted: true, stars: existing.stars ?? 0 });
+    }
+
+    const questions = await QuizQuestion
+      .find({ sessionId: req.params.sessionId })
+      .sort({ order: 1 })
+      .select('_id question emoji optionA optionB optionC optionD order');
+
+    const result = questions
+      .filter(q => q != null)
+      .map(q => {
+        const obj = q.toObject ? q.toObject() : { ...q };
+        obj.id = String(q._id);
+        return obj;
+      });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/quiz/:sessionId/submit
+router.post('/:sessionId/submit', requireAuth, async (req, res, next) => {
+  try {
+    const { answers } = req.body;
+
+    const session = await Session.findById(req.params.sessionId).select('order');
+    if (session && session.order > 4 && req.user.plan === 'FREE' && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Upgrade to Premium to unlock this lesson! 🔒' });
+    }
+
+    const questions = await QuizQuestion.find({ sessionId: req.params.sessionId });
+
+    if (!questions.length) {
+      return res.status(404).json({ error: 'No questions found for this quiz' });
+    }
+
+    let correct = 0;
+    const results = questions
+      .filter(q => q != null)
+      .map(q => {
+        const qid    = String(q._id);
+        const chosen = (answers && (answers[qid] ?? answers[q.id])) ?? null;
+        const isCorrect = chosen === q.correctAnswer;
+        if (isCorrect) correct++;
+        return { questionId: qid, chosen, correct: isCorrect, explanation: q.explanation };
+      });
+
+    const total = questions.length;
+    const stars = correct === total ? 3 : correct >= total * 0.7 ? 2 : correct > 0 ? 1 : 0;
+    res.json({ correct, total, stars, results });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/quiz/question  (admin)
+router.post('/question', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const q = await QuizQuestion.create(req.body);
+    res.status(201).json(q);
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/quiz/question/:id  (admin)
+router.patch('/question/:id', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const q = await QuizQuestion.findByIdAndUpdate(
+      req.params.id, req.body, { new: true, runValidators: true }
+    );
+    if (!q) return res.status(404).json({ error: 'Question not found' });
+    res.json(q);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/quiz/question/:id  (admin)
+router.delete('/question/:id', requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    await QuizQuestion.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted' });
+  } catch (err) { next(err); }
+});
+
+module.exports = router;
