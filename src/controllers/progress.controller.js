@@ -9,7 +9,8 @@ async function completeSession(req, res, next) {
     const { sessionId, stars = 3 } = req.body;
     const userId = req.user.id;
 
-    const session = await Session.findById(sessionId);
+   const session = await Session.findById(sessionId);
+console.log('[complete] session:', session?._id, 'courseId:', session?.courseId);
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
     // Idempotent — don't award XP twice for the same session
