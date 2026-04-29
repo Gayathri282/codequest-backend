@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const quizQuestionSchema = new mongoose.Schema(
   {
-    sessionId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
+    sessionId:     { type: String, required: true },
     question:      { type: String, required: true },
     emoji:         { type: String },
     optionA:       { type: String, required: true },

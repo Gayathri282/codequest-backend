@@ -76,6 +76,13 @@ router.post('/question', requireAuth, requireAdmin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Add this after fetching questions in POST /:sessionId/submit:
+const questions = await QuizQuestion.find({ sessionId: req.params.sessionId });
+
+if (!questions.length) {
+  return res.status(404).json({ error: 'No questions found for this quiz' });
+}
+
 // PATCH /api/quiz/question/:id  (admin)
 router.patch('/question/:id', requireAuth, requireAdmin, async (req, res, next) => {
   try {
