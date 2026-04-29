@@ -1,26 +1,22 @@
-// src/models/Session.js  — a lesson/quiz session inside a Course
 const mongoose = require('mongoose');
-
 const sessionSchema = new mongoose.Schema(
   {
-    courseId:    { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
+    _id:         { type: String },
+    courseId:    { type: String, required: true },
     title:       { type: String, required: true },
-    slug:        { type: String, required: true, unique: true }, // e.g. "bfw-s1"
-    type:        { type: String, enum: ['LESSON', 'QUIZ', 'IDE'], default: 'LESSON' },
+    slug:        { type: String },          // ← remove required:true
+    type:        { type: String, enum: ['LESSON', 'QUIZ', 'IDE', 'VIDEO'], default: 'LESSON' }, // ← add VIDEO
     order:       { type: Number, required: true },
-
-    // content
-    videoUrl:    { type: String },   // Bunny embed URL
-    videoThumb:  { type: String },   // thumbnail image URL
-    content:     { type: String },   // markdown body
+    videoUrl:    { type: String },
+    videoThumb:  { type: String },
+    content:     { type: String },
     durationMins:{ type: Number },
-
-    // features
     hasIde:      { type: Boolean, default: false },
     isPublished: { type: Boolean, default: true },
     isPro:       { type: Boolean, default: false },
-
-    // rewards
+    missionText: { type: String },
+    starterCode: { type: String },
+    solutionCode:{ type: String },
     xpReward:    { type: Number, default: 50 },
     coinsReward: { type: Number, default: 10 },
   },

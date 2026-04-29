@@ -46,5 +46,10 @@ userSchema.methods.toJSON = function () {
   delete obj.resetTokenExpiry;
   return obj;
 };
+userSchema.virtual('earnedBadges', {
+  ref:          'UserBadge',
+  localField:   '_id',
+  foreignField: 'userId',
+});
 
 module.exports = mongoose.model('User', userSchema);

@@ -82,7 +82,10 @@ async function me(req, res, next) {
     const user = await User
       .findById(req.user.id)
       .select('id email username displayName avatarEmoji age role plan xp coins level streakDays lastActiveAt createdAt')
-      .populate({ path: 'earnedBadges', populate: { path: 'badge' } });
+      .populate({
+        path: 'earnedBadges',          // virtual on User
+        populate: { path: 'badgeId' }  // ← was 'badge', should be 'badgeId' to match UserBadge schema
+      });
     res.json(user);
   } catch (err) {
     next(err);
