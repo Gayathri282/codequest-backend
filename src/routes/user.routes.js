@@ -1,18 +1,18 @@
-// backend/src/routes/user.routes.js
+// src/routes/user.routes.js
 const router = require('express').Router();
-const prisma = require('../config/db');
 const { requireAuth } = require('../middleware/auth.middleware');
+const { User } = require('../config/db');
 
-
-// PATCH /api/users/me  — update avatar, displayName
+// PATCH /api/users/me
 router.patch('/me', requireAuth, async (req, res, next) => {
   try {
     const { displayName, avatarEmoji } = req.body;
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { displayName, avatarEmoji },
-      select: { id: true, displayName: true, avatarEmoji: true }
-    });
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { displayName, avatarEmoji },
+      { new: true, runValidators: true }
+    ).select('_id displayName avatarEmoji');
+    if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) { next(err); }
 });
@@ -20,26 +20,23 @@ router.patch('/me', requireAuth, async (req, res, next) => {
 // GET /api/users/leaderboard
 router.get('/leaderboard', requireAuth, async (req, res, next) => {
   try {
-    const top = await prisma.user.findMany({
-      where: { role: 'STUDENT' },
-      orderBy: { xp: 'desc' },
-      take: 20,
-      select: { id: true, username: true, displayName: true, avatarEmoji: true, xp: true, level: true, streakDays: true }
-    });
+    const top = await User
+      .find({ role: 'STUDENT' })
+      .sort({ xp: -1 })
+      .limit(20)
+      .select('_id username displayName avatarEmoji xp level streakDays');
     res.json(top);
   } catch (err) { next(err); }
 });
 
-module.exports = router;
-
-// GET /api/users/children  — parent fetches their linked children
+// GET /api/users/children
 router.get('/children', requireAuth, async (req, res, next) => {
   try {
-    const children = await prisma.user.findMany({
-      where: { parentId: req.user.id },
-      select: { id: true, username: true, displayName: true, avatarEmoji: true, age: true, level: true, xp: true, streakDays: true }
-    });
+    const children = await User
+      .find({ parentId: req.user.id })
+      .select('_id username displayName avatarEmoji age level xp streakDays');
     res.json(children);
   } catch (err) { next(err); }
 });
 
+module.exports = router;

@@ -1,8 +1,7 @@
-// backend/src/middleware/auth.middleware.js
-const jwt = require('jsonwebtoken');
-const prisma = require('../config/db');
+// src/middleware/auth.middleware.js
+const jwt  = require('jsonwebtoken');
+const { User } = require('../config/db');
 
-// Verify JWT and attach user to req
 async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -10,21 +9,25 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token   = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, email: true, role: true, plan: true, username: true }
-    });
+    const user = await User
+      .findById(decoded.userId)
+      .select('_id email role plan username');
 
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    req.user = user;
+    // Normalise _id → id so the rest of the app can use req.user.id
+    req.user = {
+      id:       user._id.toString(),
+      email:    user.email,
+      role:     user.role,
+      plan:     user.plan,
+      username: user.username,
+    };
     next();
   } catch (err) {
-    // Only treat JWT errors as 401. DB/network errors are 503 so the
-    // frontend does NOT wipe a valid token when the database is unavailable.
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
@@ -32,7 +35,6 @@ async function requireAuth(req, res, next) {
   }
 }
 
-// Only allow admins
 function requireAdmin(req, res, next) {
   if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Admin access required' });
@@ -40,13 +42,12 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Check plan access (e.g. BASIC or PREMIUM required)
 function requirePlan(...plans) {
   return (req, res, next) => {
     if (!plans.includes(req.user?.plan)) {
       return res.status(403).json({
         error: 'Upgrade your plan to access this content',
-        requiredPlans: plans
+        requiredPlans: plans,
       });
     }
     next();
@@ -54,4 +55,3 @@ function requirePlan(...plans) {
 }
 
 module.exports = { requireAuth, requireAdmin, requirePlan };
-

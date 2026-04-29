@@ -1,8 +1,5 @@
-// backend/src/services/weekly-report.service.js
-// Send weekly progress emails to parents every Sunday at 8am IST
-// Wire this up with a cron job or Railway's cron service
-
-const prisma = require('../config/db');
+// src/services/weekly-report.service.js
+const { User, Progress, UserBadge, Badge } = require('../config/db');
 const { sendProgressReport } = require('./email.service');
 
 async function sendWeeklyReports() {
@@ -10,40 +7,51 @@ async function sendWeeklyReports() {
 
   const weekAgo = new Date(Date.now() - 7 * 86400000);
 
-  // Get all students who have a parent email set
-  const students = await prisma.user.findMany({
-    where: { role: 'STUDENT', parentId: { not: null } },
-    include: {
-      parent: { select: { email: true } },
-      progress: {
-        where: { completedAt: { gte: weekAgo }, completed: true },
-        select: { xpEarned: true },
-      },
-      earnedBadges: {
-        where: { earnedAt: { gte: weekAgo } },
-        include: { badge: { select: { name: true, emoji: true } } },
-      },
-    },
-  });
+  // Students who have a parentId set
+  const students = await User
+    .find({ role: 'STUDENT', parentId: { $ne: null } })
+    .select('_id displayName username level streakDays parentId');
 
   let sent = 0;
-  for (const student of students) {
-    if (!student.parent?.email) continue;
 
-    const weeklyXp = student.progress.reduce((s, p) => s + p.xpEarned, 0);
-    const newBadges = student.earnedBadges.map(ub => `${ub.badge.emoji} ${ub.badge.name}`);
+  for (const student of students) {
+    // Fetch parent email
+    const parent = await User.findById(student.parentId).select('email');
+    if (!parent?.email) continue;
+
+    // XP earned this week
+    const weeklyProgressAgg = await Progress.aggregate([
+      {
+        $match: {
+          userId:      student._id.toString(),
+          completed:   true,
+          completedAt: { $gte: weekAgo },
+        },
+      },
+      { $group: { _id: null, weeklyXp: { $sum: '$xpEarned' }, count: { $sum: 1 } } },
+    ]);
+    const weeklyXp = weeklyProgressAgg[0]?.weeklyXp || 0;
+    const completed = weeklyProgressAgg[0]?.count   || 0;
+
+    // Badges earned this week
+    const recentBadges = await UserBadge
+      .find({ userId: student._id.toString(), earnedAt: { $gte: weekAgo } })
+      .populate({ path: 'badgeId', select: 'name emoji' });
+
+    const newBadges = recentBadges.map(ub => `${ub.badgeId?.emoji || ''} ${ub.badgeId?.name || ''}`);
 
     await sendProgressReport({
-      to:          student.parent.email,
+      to:          parent.email,
       studentName: student.displayName || student.username,
       report: {
         weeklyXp,
-        level:       student.level,
-        streakDays:  student.streakDays,
-        completed:   student.progress.length,
+        level:      student.level,
+        streakDays: student.streakDays,
+        completed,
         newBadges,
       },
     });
+
     sent++;
   }
 
@@ -51,5 +59,4 @@ async function sendWeeklyReports() {
   return sent;
 }
 
-// POST /api/admin/send-reports  (manual trigger from admin panel)
 module.exports = { sendWeeklyReports };
