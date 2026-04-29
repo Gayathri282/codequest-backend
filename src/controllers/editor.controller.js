@@ -2,18 +2,20 @@
 const { Session, EditorDraft } = require('../config/db');
 
 function isFilesArray(files) {
-  return Array.isArray(files) && files.every(f =>
-    f &&
-    typeof f === 'object' &&
-    typeof f.name === 'string' &&
-    typeof f.content === 'string'
-  );
+  return Array.isArray(files) && 
+    files.length > 0 &&
+    files.every(f =>
+      f &&
+      typeof f === 'object' &&
+      typeof f.name === 'string' &&
+      (typeof f.content === 'string' || f.content === null || f.content === undefined)
+    );
 }
 
 async function assertSessionAccess({ sessionId, user }) {
   // editor_controller.js — assertSessionAccess
 const session = await Session
-  .findOne({ _id: sessionId })   // ← _id is the string "bfw-s1"
+  .findById(sessionId)    // ← _id is the string "bfw-s1"
   .select('_id courseId order');
 
   if (!session) return { error: { status: 404, body: { error: 'Session not found' } } };
@@ -100,12 +102,16 @@ async function putDraft(req, res, next) {
     if (error) return res.status(error.status).json(error.body);
 
     const userId = req.user.id;
+      const normalized = files.map(f => ({
+      name: f.name,
+      content: f.content ?? '',
+    }));
 
     const draft = await EditorDraft.findOneAndUpdate(
       { userId, sessionId },
-      { userId, sessionId, courseId: session.courseId, files },
+      { userId, sessionId, courseId: session.courseId, files: normalized },
       { upsert: true, new: true, setDefaultsOnInsert: true }
-    ).select('sessionId updatedAt');
+).select('sessionId updatedAt');
 
     res.json({ ok: true, sessionId: draft.sessionId, updatedAt: draft.updatedAt });
   } catch (err) {
