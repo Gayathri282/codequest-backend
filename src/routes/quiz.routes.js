@@ -25,10 +25,20 @@ router.get('/:sessionId', requireAuth, async (req, res, next) => {
       .sort({ order: 1 })
       .select('_id question emoji optionA optionB optionC optionD order');
 
-    // Explicitly add id field so frontend can key answers correctly
-    res.json(questions.map(q => ({ ...q.toObject(), id: q._id.toString() })));
-  } catch (err) { next(err); }
+    // Replace the res.json line at the bottom of GET /:sessionId
+const result = questions
+  .filter(q => q != null)  // ← guard against nulls
+  .map(q => {
+    const obj = q.toObject ? q.toObject() : { ...q };
+    obj.id = String(q._id);
+    return obj;
+  });
+res.json(result); 
+} catch (err) {
+    next(err);
+  }
 });
+
 
 // POST /api/quiz/:sessionId/submit
 router.post('/:sessionId/submit', requireAuth, async (req, res, next) => {
