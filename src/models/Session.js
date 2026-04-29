@@ -39,5 +39,11 @@ const sessionSchema = new mongoose.Schema(
   }
 }
 );
+// Add this before module.exports in Session.js
+sessionSchema.virtual('quizQuestions', {
+  ref:          'QuizQuestion',
+  localField:   '_id',
+  foreignField: 'sessionId',
+});
 
 module.exports = mongoose.model('Session', sessionSchema);
