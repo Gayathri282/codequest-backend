@@ -1,9 +1,13 @@
-// backend/src/index.js
+// src/index.js
+// Force Google DNS — fixes SRV resolution on restrictive networks
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 require('dotenv').config();
 const express   = require('express');
 const cors      = require('cors');
 const helmet    = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { connectDB } = require('./config/db');
 
 const authRoutes     = require('./routes/auth.routes');
 const courseRoutes   = require('./routes/course.routes');
@@ -15,10 +19,13 @@ const adminRoutes    = require('./routes/admin.routes');
 const uploadRoutes   = require('./routes/upload.routes');
 const videoRoutes    = require('./routes/video.routes');
 const userRoutes     = require('./routes/user.routes');
-const editorRoutes   = require('./routes/editor.routes');
 const { errorHandler } = require('./middleware/error.middleware');
+// with your other requires at the top
+const editorRoutes = require('./routes/editor.routes');
 
-const app  = express();
+
+const app = express();
+app.set('trust proxy', 1);  // ← add this line — fixes rate-limit error on Render
 const PORT = process.env.PORT || 5000;
 
 // ── Security ──────────────────────────────────────────────────────
@@ -31,13 +38,11 @@ app.use(cors({
 
 // ── Rate limiting ─────────────────────────────────────────────────
 app.use('/api/',              rateLimit({ windowMs: 15*60*1000, max: 500, message: { error: 'Too many requests' } }));
-// Only restrict brute-force targets (login/register), NOT /auth/me
 app.use('/api/auth/login',    rateLimit({ windowMs: 15*60*1000, max: 20,  message: { error: 'Too many login attempts' } }));
 app.use('/api/auth/register', rateLimit({ windowMs: 60*60*1000, max: 10,  message: { error: 'Too many registrations' } }));
-app.use('/api/video/',        rateLimit({ windowMs: 60*60*1000, max: 20  })); // video uploads are expensive
+app.use('/api/video/',        rateLimit({ windowMs: 60*60*1000, max: 20  }));
 
 // ── Body parsing ──────────────────────────────────────────────────
-// Raw body MUST come before json() for webhook signature verification
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -46,6 +51,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth',     authRoutes);
 app.use('/api/courses',  courseRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/editor', editorRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/quiz',     quizRoutes);
 app.use('/api/payments', paymentRoutes);
@@ -53,23 +59,30 @@ app.use('/api/admin',    adminRoutes);
 app.use('/api/users',    userRoutes);
 app.use('/api/upload',   uploadRoutes);
 app.use('/api/video',    videoRoutes);
-app.use('/api/editor',   editorRoutes);
+// with your other app.use() routes
+
 
 // ── Health check ──────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date(), env: process.env.NODE_ENV }));
 
-// ── 404 handler ───────────────────────────────────────────────────
+// ── 404 ───────────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` }));
 
 // ── Global error handler ──────────────────────────────────────────
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 CodeQuest API  →  http://localhost:${PORT}  [${process.env.NODE_ENV || 'development'}]\n`);
-  console.log('   Routes:');
-  console.log('   POST /api/auth/register  POST /api/auth/login  GET /api/auth/me');
-  console.log('   GET  /api/courses        POST /api/progress/complete');
-  console.log('   POST /api/payments/create-order  POST /api/payments/verify');
-  console.log('   POST /api/upload/thumbnail       POST /api/video/upload');
-  console.log('   GET  /api/admin/stats    GET  /api/admin/students\n');
-});
+// ── Start ─────────────────────────────────────────────────────────
+async function start() {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`\n🚀 CodeQuest API  →  http://localhost:${PORT}  [${process.env.NODE_ENV || 'development'}]\n`);
+    console.log('   Routes:');
+    console.log('   POST /api/auth/register  POST /api/auth/login  GET /api/auth/me');
+    console.log('   GET  /api/courses        POST /api/progress/complete');
+    console.log('   POST /api/payments/create-order  POST /api/payments/verify');
+    console.log('   POST /api/upload/thumbnail       POST /api/video/upload');
+    console.log('   GET  /api/admin/stats    GET  /api/admin/students\n');
+  });
+}
+
+start();
