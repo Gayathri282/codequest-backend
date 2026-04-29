@@ -20,7 +20,24 @@ const sessionSchema = new mongoose.Schema(
     xpReward:    { type: Number, default: 50 },
     coinsReward: { type: Number, default: 10 },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  // In src/models/Session.js — replace schema options:
+{
+  timestamps: true,
+  toJSON: {
+    virtuals: true,
+    transform: function(doc, ret) {
+      ret.id = String(doc._id);
+      return ret;
+    }
+  },
+  toObject: {
+    virtuals: true,
+    transform: function(doc, ret) {
+      ret.id = String(doc._id);
+      return ret;
+    }
+  }
+}
 );
 
 module.exports = mongoose.model('Session', sessionSchema);
